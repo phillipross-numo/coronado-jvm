@@ -2,6 +2,7 @@ package io.github.coronado.api
 
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.adapter
+import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import java.net.URI
 import java.net.URLEncoder
 import java.net.http.HttpClient
@@ -34,6 +35,14 @@ class Client private constructor(
     var accessToken = ""
     var expirationTime = LocalDateTime.now()
     private var tokenType = ""
+
+    val moshi: Moshi = Moshi.Builder()
+        .add(BigDecimalAdapter)
+        .add(CurrencyAdapter)
+        .add(LocalDateAdapter)
+        .add(LocalDateTimeAdapter)
+        .add(LocalTimeAdapter)
+        .add(ZonedDateTimeAdapter).addLast(KotlinJsonAdapterFactory()).build()
 
     data class Builder(
         var serviceDomain: String? = null,

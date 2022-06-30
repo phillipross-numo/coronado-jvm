@@ -1,6 +1,7 @@
 package io.github.coronado.baseobjects
 
 import com.squareup.moshi.Json
+import io.github.coronado.api.Address
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalTime

@@ -1,0 +1,4620 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Triple API",
+    "version": "1.1",
+    "description": "# Overview\n\nThe Triple API enables Partners to integrate with the Triple platform and\nCustomers (consumers or card holders) to access offer content.\n\nConnecting to our environment requires proper credentials.\nSee the Authentication section for more details.\n\nAdditionally, triple content will be placed on a client-specific S3 bucket\nfor ingestion. Please contact your triple client engagement manager for more\ninformation and to setup access.\n\n## Concepts\n\n### Partner Types\n\n**Portfolio Managers** are, generally, companies that provide services to\nmultiple separate financial institutions such as regional banks, credit\nunions, or companies running open-enrollment rewards programs. These\npartners manage a *portfolio* of *Publishers*.\n\n**Publishers** are, generally, banks or companies that offer one or more\npayment *Card Programs* to individuals.\n\n**Content Providers** are the companies that publish *Offers* on the\nTriple platform.\n\n### Card Programs\n\n**Card Programs** represent a logical grouping of issued payment cards. A\nPublisher will create a Card Program for each debit or credit card offering,\nsuch as miles or cash back. For Publishers that are not Banks/Card Issuers\n(for example, a third-party rewards program), Card Programs can provide a\nsimply way to organize Card Accounts.\n\n**Card Accounts** represent the account connected to a payment card.\nMultiple physical cards may be associated with a single Card Account, such\nas when there are multiple authorized users or cards are replaced as lost,\nstolen, or expired. Each **Transaction** reported to Triple must specify\nthe Card Account to which it belongs.\n\n**Consumers** represent individual card holders. A Consumer may be\nassociated with multiple Card Accounts across a Publisher's Card Programs,\nsuch as when an individual has both a \"miles\" and a \"cash back\" card with\nthe same bank. Multiple Consumers may be associated with the same Card\nAccount, such as when there are multiple authorized users.\n\n### External IDs\n\nTriple requires Partners to specify IDs for the entities they create through\nthe Triple API. Generally, these \"external\" IDs only need to be unique\nwithin the scope of an object's parent entity, but we encourage the use of\nUUIDs to avoid confusion. External IDs must be stable and *never sensitive*,\nas they cannot be updated through the API.\n\nTriple will also create a unique ID for each entity created through the API.\n\n## Partner API\n\nMost integration effort will focus on calls to endpoints under the\n`/partner` path. These endpoints will allow Content Providers to create\nand update Offer content and Publishers to register card holders, retrieve\nOffer content for display, and submit Transactions for Rewards.\n\nThe exposed APIs allow developers to authenticate to the triple service,\nregister and unregister (delete) cards, retrieve affiliate offer URLs,\nsubmit transactions, and see user notifications delivered over webhooks.\n\n## Affiliate Links\n\nThe `/affiliate-link-api` endpoint will soon be updated to integrate with\nthe Partner API. However, the process for generating a link and redirecting\nthe user to the affiliate website will remain generally the same.\n\n# Authentication\n\n<!-- ReDoc-Inject: <security-definitions> -->",
+    "termsOfService": "https://tripleup.com/terms/",
+    "contact": {
+      "email": "apiteam@tripleup.com"
+    },
+    "license": {
+      "name": "Commercial"
+    }
+  },
+  "paths": {
+    "/card/{card_id}": {
+      "put": {
+        "summary": "Register a new card",
+        "deprecated": true,
+        "description": "This endpoint is superseded by\n[`POST /partner/card-accounts`](#operation/createCardAccount).\n",
+        "parameters": [
+          {
+            "name": "card_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/CardId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessBody"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Accepted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Card already exists",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CardExists"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FailureBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "triple_auth": [
+              "api.tripleup.com/partner.publishers"
+            ]
+          }
+        ]
+      },
+      "delete": {
+        "summary": "Delete (unregister) a card",
+        "deprecated": true,
+        "description": "This endpoint is superseded by\n[`PATCH /partner/card-accounts`](#operation/updateCardAccountById).\n",
+        "parameters": [
+          {
+            "name": "card_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/CardId"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessBody"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FailureBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "triple_auth": [
+              "api.tripleup.com/partner.publishers"
+            ]
+          }
+        ]
+      }
+    },
+    "/affiliate-link-api": {
+      "post": {
+        "summary": "Generate an affiliate link",
+        "description": "Generate a link for an (online) affiliate Offer. The link is specific to a single Card Account (cardholder), in order to attribute the purchase to the correct account.\n",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AffiliateLinkRequestBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AffiliateSuccess"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Merchant not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AffiliateFailure"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "triple_auth": [
+              "api.tripleup.com/partner.publishers"
+            ]
+          }
+        ]
+      }
+    },
+    "/transaction/{transaction_id}": {
+      "put": {
+        "summary": "Create or update a transaction",
+        "deprecated": true,
+        "description": "This endpoint is superseded by\n[`POST /partner/transactions`](#operation/createTransaction).\n\nSubmit a transaction for processing.\nThe `card_id` and `merchant_id` need to exist before submitting a transaction.\n\nThe success response content returned by this API is misleading.\nThis API call initiates transaction processing,\nbut the response body says \"Processed\".\n",
+        "parameters": [
+          {
+            "name": "transaction_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/TransactionId"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TransactionDetail"
+              },
+              "example": {
+                "card_id": "card-1234-5678",
+                "merchant_id": "AcmeTools",
+                "transaction_amount": 12.34,
+                "transaction_date_time": "2022-01-20T14:30:00Z"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessBody"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Accepted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SuccessBody"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Duplicate Transaction",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DuplicateTransaction"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FailureBody"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "triple_auth": [
+              "api.tripleup.com/partner.publishers"
+            ]
+          }
+        ]
+      }
+    },
+    "/affiliate-link-consumer": {},
+    "/reward_webhook_url": {
+      "post": {
+        "summary": "Notifications",
+        "description": "Note: This is not a valid triple API endpoint.\n\nTriple can send reward notification messages\nto a webhook setup by a triple partner. This describes what our\noutbound webhook call will provide to the triple partner.\n\nThe `transaction_amount` and `reward_amount` fields are passed as\nstrings but always contain decimal numerics.\n",
+        "parameters": [
+          {
+            "name": "x-api-key",
+            "in": "header",
+            "description": "An API key",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "The Transaction webhook payload.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RewardWebhook"
+              },
+              "example": {
+                "message": "Hi, your recent $19.99 purchase at Acme Tools has earned you 2.00 points!",
+                "card_id": "card-1234-5678",
+                "merchant_id": 111222333,
+                "merchant_name": "Acme Tools",
+                "transaction_id": "7593cdb0-9ab1-4e49-ac37-f11cf5fd958e",
+                "transaction_amount": "12.34",
+                "reward_amount": "0.12"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Your server returns this code if it accepts the call."
+          }
+        }
+      }
+    },
+    "/": {},
+    "/partner/card-accounts": {
+      "get": {
+        "tags": [
+          "Card Accounts"
+        ],
+        "operationId": "listCardAccounts",
+        "summary": "List Card Accounts",
+        "description": "Returns a list of Card Accounts, optionally filtered.\n\nCurrently, this endpoint has a hard limit of returning up to 1,000\nresults. Future API releases may support paging results.\n",
+        "security": [
+          {
+            "triple_auth": [
+              "api.tripleup.com/partner.publishers"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/publisherExternalId"
+          },
+          {
+            "$ref": "#/components/parameters/cardProgramExternalId"
+          },
+          {
+            "$ref": "#/components/parameters/cardAccountExternalId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/CardAccounts"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Card Accounts"
+        ],
+        "operationId": "createCardAccount",
+        "summary": "Create a Card Account",
+        "description": "Create a Card Account.\n",
+        "security": [
+          {
+            "triple_auth": [
+              "api.tripleup.com/partner.publishers"
+            ]
+          }
+        ],
+        "requestBody": {
+          "$ref": "#/components/requestBodies/CardAccountPost"
+        },
+        "responses": {
+          "201": {
+            "$ref": "#/components/responses/CardAccount"
+          },
+          "409": {
+            "$ref": "#/components/responses/DuplicateEntity"
+          }
+        }
+      }
+    },
+    "/partner/card-accounts/{id}": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/entityId"
+        }
+      ],
+      "get": {
+        "tags": [
+          "Card Accounts"
+        ],
+        "operationId": "getCardAccountById",
+        "summary": "Get a Card Account",
+        "description": "Get Card Account details.\n",
+        "security": [
+          {
+            "triple_auth": [
+              "api.tripleup.com/partner.publishers"
+            ]
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/CardAccount"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Card Accounts"
+        ],
+        "operationId": "updateCardAccountById",
+        "summary": "Update a Card Account",
+        "description": "(Alpha - this endpoint is subject to breaking change)\n\nEnroll, un-enroll, or close a Card Account.\n\nCard Accounts must be enrolled at the time of a transaction and not\nclosed at the time of distribution in order to receive Rewards.\n\nThe date of enrollment defaults to the current date at UTC-12. The date\nof un-enrollment defaults to the current date at UTC+12. (This is to\naccommodate the possibility of a customer's current local date being\ndifferent than the server's.)\n\nA future API release will address the edge case of unenrolling and then\nre-enrolling an account within the same day.\n",
+        "security": [
+          {
+            "triple_auth": [
+              "api.tripleup.com/partner.publishers"
+            ]
+          }
+        ],
+        "requestBody": {
+          "$ref": "#/components/requestBodies/CardAccountPatch"
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/CardAccount"
+          }
+        }
+      }
+    },
+    "/partner/card-accounts/{id}/offer-activations": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/entityId"
+        }
+      ],
+      "get": {
+        "tags": [
+          "Offer Activation"
+        ],
+        "operationId": "getOfferActivations",
+        "summary": "Get Activated Offers",
+        "parameters": [
+          {
+            "name": "include_expired",
+            "description": "When `true`, the results will include Activations up to 90 days old\nfor Offers that have expired, in addition to all active Offers.\n",
+            "in": "query",
+            "schema": {
+              "default": false,
+              "type": "boolean"
+            }
+          }
+        ],
+        "security": [
+          {
+            "triple_auth": [
+              "api.tripleup.com/partner.publishers"
+            ]
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/OfferActivations"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Offer Activation"
+        ],
+        "operationId": "createOfferActivation",
+        "summary": "Activate an Offer",
+        "security": [
+          {
+            "triple_auth": [
+              "api.tripleup.com/partner.publishers"
+            ]
+          }
+        ],
+        "requestBody": {
+          "$ref": "#/components/requestBodies/OfferActivationPost"
+        },
+        "responses": {
+          "201": {
+            "$ref": "#/components/responses/OfferActivation"
+          }
+        }
+      }
+    },
+    "/partner/card-programs": {
+      "get": {
+        "tags": [
+          "Card Programs"
+        ],
+        "operationId": "listCardPrograms",
+        "summary": "List Card Programs",
+        "description": "Returns a list of Card Programs, optionally filtered.\n\nThis list can be used to find Card Programs' ID given an external ID.\n",
+        "security": [
+          {
+            "triple_auth": [
+              "api.tripleup.com/partner.publishers"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/publisherExternalId"
+          },
+          {
+            "$ref": "#/components/parameters/cardProgramExternalId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/CardPrograms"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Card Programs"
+        ],
+        "operationId": "createCardProgram",
+        "summary": "Create a Card Program",
+        "description": "Creates a Card Program.\n",
+        "security": [
+          {
+            "triple_auth": [
+              "api.tripleup.com/partner.publishers"
+            ]
+          }
+        ],
+        "requestBody": {
+          "$ref": "#/components/requestBodies/CardProgramPost"
+        },
+        "responses": {
+          "201": {
+            "$ref": "#/components/responses/CardProgram"
+          },
+          "409": {
+            "$ref": "#/components/responses/DuplicateEntity"
+          }
+        }
+      }
+    },
+    "/partner/card-programs/{id}": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/entityId"
+        }
+      ],
+      "get": {
+        "tags": [
+          "Card Programs"
+        ],
+        "operationId": "getCardProgramById",
+        "summary": "Get a Card Program",
+        "security": [
+          {
+            "triple_auth": [
+              "api.tripleup.com/partner.publishers"
+            ]
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/CardProgram"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Card Programs"
+        ],
+        "operationId": "updateCardProgram",
+        "summary": "Update a Card Program",
+        "description": "Updates a Card Program.\n\nCurrently, only the name of a Card Program may be updated.\n",
+        "security": [
+          {
+            "triple_auth": [
+              "api.tripleup.com/partner.publishers"
+            ]
+          }
+        ],
+        "requestBody": {
+          "$ref": "#/components/requestBodies/CardProgramPatch"
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/CardProgram"
+          }
+        }
+      }
+    },
+    "/partner/healthcheck": {
+      "get": {
+        "operationId": "heathcheck",
+        "summary": "Healthcheck",
+        "description": "Checks to see if the API is healthy. Returns information about the API\nversion.\n",
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Healthcheck"
+          }
+        }
+      }
+    },
+    "/partner/merchants": {
+      "get": {
+        "tags": [
+          "Offer Providers"
+        ],
+        "operationId": "listMerchants",
+        "summary": "List Merchants",
+        "description": "Returns a list of Merchants, optionally filtered.\n\nThis list can be used to find a Merchant's ID given an external ID.\n",
+        "security": [
+          {
+            "triple_auth": [
+              "api.tripleup.com/partner.publishers"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/merchantExternalId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Merchants"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Offer Providers"
+        ],
+        "operationId": "createMerchant",
+        "summary": "Create a Merchant",
+        "description": "Creates a Merchant.\n",
+        "security": [
+          {
+            "triple_auth": [
+              "api.tripleup.com/partner.publishers"
+            ]
+          }
+        ],
+        "requestBody": {
+          "$ref": "#/components/requestBodies/MerchantPost"
+        },
+        "responses": {
+          "201": {
+            "$ref": "#/components/responses/Merchant"
+          },
+          "409": {
+            "$ref": "#/components/responses/DuplicateEntity"
+          }
+        }
+      }
+    },
+    "/partner/merchants/{id}": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/entityId"
+        }
+      ],
+      "get": {
+        "tags": [
+          "Offer Providers"
+        ],
+        "operationId": "getMerchantById",
+        "summary": "Get a Merchant",
+        "security": [
+          {
+            "triple_auth": [
+              "api.tripleup.com/partner.publishers"
+            ]
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Merchant"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Offer Providers"
+        ],
+        "operationId": "updateMerchant",
+        "summary": "Update a Merchant",
+        "description": "Updates a Merchant.\n",
+        "security": [
+          {
+            "triple_auth": [
+              "api.tripleup.com/partner.publishers"
+            ]
+          }
+        ],
+        "requestBody": {
+          "$ref": "#/components/requestBodies/MerchantPatch"
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Merchant"
+          }
+        }
+      }
+    },
+    "/partner/merchant-locations": {
+      "get": {
+        "tags": [
+          "Offer Providers"
+        ],
+        "operationId": "listMerchantLocations",
+        "summary": "List Merchant Locations",
+        "description": "Returns a list of Merchant Locations, optionally filtered.\n\nThis list can be used to find a Merchant Location's ID given an external\nID.\n",
+        "security": [
+          {
+            "triple_auth": [
+              "api.tripleup.com/partner.publishers"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/merchantLocationExternalId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/MerchantLocations"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Offer Providers"
+        ],
+        "operationId": "createMerchantLocation",
+        "summary": "Create a Merchant Location",
+        "description": "Creates a Merchant Location.\n",
+        "security": [
+          {
+            "triple_auth": [
+              "api.tripleup.com/partner.publishers"
+            ]
+          }
+        ],
+        "requestBody": {
+          "$ref": "#/components/requestBodies/MerchantLocationPost"
+        },
+        "responses": {
+          "201": {
+            "$ref": "#/components/responses/MerchantLocation"
+          },
+          "409": {
+            "$ref": "#/components/responses/DuplicateEntity"
+          }
+        }
+      }
+    },
+    "/partner/merchant-locations/{id}": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/entityId"
+        }
+      ],
+      "get": {
+        "tags": [
+          "Offer Providers"
+        ],
+        "operationId": "getMerchantLocationById",
+        "summary": "Get a Merchant Location",
+        "security": [
+          {
+            "triple_auth": [
+              "api.tripleup.com/partner.publishers"
+            ]
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/MerchantLocation"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Offer Providers"
+        ],
+        "operationId": "updateMerchantLocation",
+        "summary": "Update a Merchant Location",
+        "description": "Updates a Merchant Location.\n",
+        "security": [
+          {
+            "triple_auth": [
+              "api.tripleup.com/partner.publishers"
+            ]
+          }
+        ],
+        "requestBody": {
+          "$ref": "#/components/requestBodies/MerchantLocationPatch"
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/MerchantLocation"
+          }
+        }
+      }
+    },
+    "/partner/offer-display/search-offers": {
+      "get": {
+        "tags": [
+          "Offer Display"
+        ],
+        "operationId": "searchOffersForDisplay",
+        "summary": "Search Offers",
+        "description": "Search for offers, optionally by category.\n\nThe default behavior of this endpoint is the null query, which fetches\ntriple offers recommendations based on a Customer's geo-location,\ntransaction history, and offer interactions.\n\nHowever, a Customer can also search directly for offers with ad hoc text\nqueries and/or by faceting on offer category. This action replaces the null\nquery with search terms and/or one or more offer category facets.\n\nFor example, a Customer may search for 'italian food' in plain text and\nselect the 'FOOD' offer category facet.\n\nSearch results are paginated, using the `page_size` and `page_offset` parameters.\nFor example, page_size=10 and page_offset=30 corresponds to the 4th page\nof 10 offers.\n\nNote that Offer Display Rules are enforced against all search results.\n",
+        "security": [
+          {
+            "triple_auth": [
+              "api.tripleup.com/partner.view_offers"
+            ]
+          }
+        ],
+        "requestBody": {
+          "$ref": "#/components/requestBodies/OfferSearchGetOrPost"
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/OfferSearchResults"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Offer Display"
+        ],
+        "operationId": "searchOffersForDisplay",
+        "summary": "Search Offers",
+        "description": "Search for offers, optionally by category.\n\nThe default behavior of this endpoint is the null query, which fetches\ntriple offers recommendations based on a Customer's geo-location,\ntransaction history, and offer interactions.\n\nHowever, a Customer can also search directly for offers with ad hoc text\nqueries and/or by faceting on offer category. This action replaces the null\nquery with search terms and/or one or more offer category facets.\n\nFor example, a Customer may search for 'italian food' in plain text and\nselect the 'FOOD' offer category facet.\n\nSearch results are paginated, using the `page_size` and `page_offset` parameters.\nFor example, page_size=10 and page_offset=30 corresponds to the 4th page\nof 10 offers.\n\nNote that Offer Display Rules are enforced against all search results.\n",
+        "security": [
+          {
+            "triple_auth": [
+              "api.tripleup.com/partner.view_offers"
+            ]
+          }
+        ],
+        "requestBody": {
+          "$ref": "#/components/requestBodies/OfferSearchGetOrPost"
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/OfferSearchResults"
+          }
+        }
+      }
+    },
+    "/partner/offer-display/details/{id}": {
+      "parameters": [
+        {
+          "name": "id",
+          "description": "The Triple ID of the Offer",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "$ref": "#/components/schemas/Offer/properties/id"
+          }
+        }
+      ],
+      "get": {
+        "tags": [
+          "Offer Display"
+        ],
+        "operationId": "getOfferDetailsById",
+        "summary": "Get Offer Details",
+        "description": "Get details and Merchant Locations for a given Offer.\n\nTo include physical Merchant Locations in the response, you must either\ninclude the `Geo-Position` header or specify the `ml_id` parameter one\nor more times.\n",
+        "requestBody": {
+          "$ref": "#/components/requestBodies/OfferDetailsGetOrPost"
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/OfferDetails"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Offer Display"
+        ],
+        "operationId": "getOfferDetailsById",
+        "summary": "Get Offer Details",
+        "description": "Get details and Merchant Locations for a given Offer.\n\nTo include physical Merchant Locations in the response, you must either\ninclude the `Geo-Position` header or specify the `ml_id` parameter one\nor more times.\n",
+        "requestBody": {
+          "$ref": "#/components/requestBodies/OfferDetailsGetOrPost"
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/OfferDetails"
+          }
+        }
+      }
+    },
+    "/partner/offer-display-rules": {
+      "get": {
+        "tags": [
+          "Offer Display Rules"
+        ],
+        "operationId": "listOfferDisplayRules",
+        "summary": "List Offer Display Rules",
+        "description": "Returns a list of Offer Display Rules, optionally filtered.\n",
+        "security": [
+          {
+            "triple_auth": [
+              "api.tripleup.com/partner.publishers"
+            ]
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/OfferDisplayRules"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Offer Display Rules"
+        ],
+        "operationId": "createOfferExclusions",
+        "summary": "Create a Offer Display Rules",
+        "description": "Creates an Offer Display Rule.\n",
+        "security": [
+          {
+            "triple_auth": [
+              "api.tripleup.com/partner.publishers"
+            ]
+          }
+        ],
+        "requestBody": {
+          "$ref": "#/components/requestBodies/OfferDisplayRulePost"
+        },
+        "responses": {
+          "201": {
+            "$ref": "#/components/responses/OfferDisplayRule"
+          },
+          "409": {
+            "$ref": "#/components/responses/DuplicateEntity"
+          }
+        }
+      }
+    },
+    "/partner/offer-display-rules/{id}": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/entityId"
+        }
+      ],
+      "delete": {
+        "tags": [
+          "Offer Display Rules"
+        ],
+        "operationId": "deleteOfferDisplayRuleById",
+        "summary": "Delete an Offer Display Rule",
+        "security": [
+          {
+            "triple_auth": [
+              "api.tripleup.com/partner.publishers"
+            ]
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Offer Display Rules"
+        ],
+        "operationId": "getOfferDisplayRuleById",
+        "summary": "Get an Offer Display Rule",
+        "security": [
+          {
+            "triple_auth": [
+              "api.tripleup.com/partner.publishers"
+            ]
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/OfferDisplayRule"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Offer Display Rules"
+        ],
+        "operationId": "updateOfferDisplayRule",
+        "summary": "Update an Offer Display Rule",
+        "description": "Updates an Offer Display Rule.\n",
+        "security": [
+          {
+            "triple_auth": [
+              "api.tripleup.com/partner.publishers"
+            ]
+          }
+        ],
+        "requestBody": {
+          "$ref": "#/components/requestBodies/OfferDisplayRulePatch"
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/OfferDisplayRule"
+          }
+        }
+      }
+    },
+    "/partner/offers": {
+      "get": {
+        "tags": [
+          "Offer Providers"
+        ],
+        "operationId": "listOffers",
+        "summary": "List Offers",
+        "description": "Returns a list of Offers, optionally filtered.\n\nThis list can be used to find am Offer's ID given an external ID.\n",
+        "security": [
+          {
+            "triple_auth": [
+              "api.tripleup.com/partner.publishers"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/merchantExternalId"
+          },
+          {
+            "$ref": "#/components/parameters/offerExternalId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Offers"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Offer Providers"
+        ],
+        "operationId": "createOffer",
+        "summary": "Create an Offer",
+        "description": "Creates an Offer.\n",
+        "security": [
+          {
+            "triple_auth": [
+              "api.tripleup.com/partner.publishers"
+            ]
+          }
+        ],
+        "requestBody": {
+          "$ref": "#/components/requestBodies/OfferPost"
+        },
+        "responses": {
+          "201": {
+            "$ref": "#/components/responses/Offer"
+          },
+          "409": {
+            "$ref": "#/components/responses/DuplicateEntity"
+          }
+        }
+      }
+    },
+    "/partner/offers/{id}": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/entityId"
+        }
+      ],
+      "get": {
+        "tags": [
+          "Offer Providers"
+        ],
+        "operationId": "getOfferById",
+        "summary": "Get an Offer",
+        "security": [
+          {
+            "triple_auth": [
+              "api.tripleup.com/partner.publishers"
+            ]
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Offer"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Offer Providers"
+        ],
+        "operationId": "updateOffer",
+        "summary": "Update an Offer",
+        "description": "Updates an Offer.\n",
+        "security": [
+          {
+            "triple_auth": [
+              "api.tripleup.com/partner.publishers"
+            ]
+          }
+        ],
+        "requestBody": {
+          "$ref": "#/components/requestBodies/OfferPatch"
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Offer"
+          }
+        }
+      }
+    },
+    "/partner/publishers": {
+      "get": {
+        "tags": [
+          "Portfolio Management"
+        ],
+        "operationId": "listPublishers",
+        "summary": "Get a list of Publishers",
+        "description": "Returns a list of Publishers, optionally filtered.\n\nCurrently, this endpoint has a hard limit of returning up to 1,000\nresults. Future API releases may support paging results.\n",
+        "security": [
+          {
+            "triple_auth": [
+              "api.tripleup.com/partner.publishers"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/publisherExternalId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Publishers"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Portfolio Management"
+        ],
+        "operationId": "createPublisher",
+        "summary": "Create a Publisher",
+        "security": [
+          {
+            "triple_auth": [
+              "api.tripleup.com/partner.portfolios"
+            ]
+          }
+        ],
+        "requestBody": {
+          "$ref": "#/components/requestBodies/PublisherPost"
+        },
+        "responses": {
+          "201": {
+            "$ref": "#/components/responses/Publisher"
+          },
+          "409": {
+            "$ref": "#/components/responses/DuplicateEntity"
+          }
+        }
+      }
+    },
+    "/partner/publishers/{id}": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/entityId"
+        }
+      ],
+      "get": {
+        "tags": [
+          "Portfolio Management"
+        ],
+        "operationId": "getPublisher",
+        "summary": "Get a Publisher",
+        "security": [
+          {
+            "triple_auth": [
+              "api.tripleup.com/partner.publishers"
+            ]
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Publisher"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Portfolio Management"
+        ],
+        "operationId": "updatePublisher",
+        "summary": "Update a Publisher",
+        "description": "Updates a Publisher.\n\nCurrently, only the Publisher name and address may be updated.\n",
+        "security": [
+          {
+            "triple_auth": [
+              "api.tripleup.com/partner.publishers"
+            ]
+          }
+        ],
+        "requestBody": {
+          "$ref": "#/components/requestBodies/PublisherPatch"
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Publisher"
+          }
+        }
+      }
+    },
+    "/partner/rewards": {
+      "get": {
+        "tags": [
+          "Rewards"
+        ],
+        "operationId": "listRewards",
+        "summary": "List Rewards",
+        "description": "Lists Rewards and associated Transaction details that triple has matched\nto active Offers in the last 90 days.\n",
+        "security": [
+          {
+            "triple_auth": [
+              "api.tripleup.com/partner.content_providers"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "allOf": [
+                {
+                  "default": "PENDING_MERCHANT_APPROVAL"
+                },
+                {
+                  "$ref": "#/components/schemas/Transaction/properties/reward_details/items/properties/status"
+                }
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Rewards"
+          }
+        }
+      }
+    },
+    "/partner/rewards.approve": {
+      "post": {
+        "tags": [
+          "Rewards"
+        ],
+        "operationId": "approveReward",
+        "summary": "Approve a Reward",
+        "description": "Transitions a Reward from `PENDING_MERCHANT_APPROVAL` to the\n`PENDING_MERCHANT_FUNDING` status.\n",
+        "security": [
+          {
+            "triple_auth": [
+              "api.tripleup.com/partner.content_providers"
+            ]
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "transaction_id",
+                  "offer_id"
+                ],
+                "properties": {
+                  "transaction_id": {
+                    "$ref": "#/components/schemas/Transaction/properties/id"
+                  },
+                  "offer_id": {
+                    "$ref": "#/components/schemas/Offer/properties/id"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/RewardApproved"
+          },
+          "default": {
+            "description": "Typical error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "description": "Indicates what error or errors were encountered while\nprocessing this request. In addition to malformed JSON\nentities, the API may return an error if:\n* The Reward status cannot be transitioned.\n* The Transaction ID or Offer ID is invalid.\n"
+                    },
+                    {
+                      "$ref": "#/components/schemas/Error"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/partner/rewards.deny": {
+      "post": {
+        "tags": [
+          "Rewards"
+        ],
+        "operationId": "denyReward",
+        "summary": "Deny a Reward",
+        "description": "Transitions a Reward from `PENDING_MERCHANT_APPROVAL` to the\n`DENIED_BY_MERCHANT` status.\n\nThe Merchant must provide a reason for denying the Reward in the\n`notes` field of this request.\n",
+        "security": [
+          {
+            "triple_auth": [
+              "api.tripleup.com/partner.content_providers"
+            ]
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "transaction_id",
+                  "offer_id",
+                  "notes"
+                ],
+                "properties": {
+                  "transaction_id": {
+                    "$ref": "#/components/schemas/Transaction/properties/id"
+                  },
+                  "offer_id": {
+                    "$ref": "#/components/schemas/Transaction/properties/reward_details/items/properties/offer_id"
+                  },
+                  "notes": {
+                    "$ref": "#/components/schemas/Transaction/properties/reward_details/items/properties/notes"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/RewardDenied"
+          },
+          "default": {
+            "description": "Typical error response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "description": "Indicates what error or errors were encountered while\nprocessing this request. In addition to malformed JSON\nentities, the API may return an error if:\n* The Reward status cannot be transitioned.\n* The Transaction ID or Offer ID is invalid.\n"
+                    },
+                    {
+                      "$ref": "#/components/schemas/Error"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/partner/transactions": {
+      "get": {
+        "tags": [
+          "Transactions"
+        ],
+        "operationId": "listTransactions",
+        "summary": "Get a list of Transactions",
+        "security": [
+          {
+            "triple_auth": [
+              "api.tripleup.com/partner.publishers"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/publisherExternalId"
+          },
+          {
+            "$ref": "#/components/parameters/cardProgramExternalId"
+          },
+          {
+            "$ref": "#/components/parameters/cardAccountExternalId"
+          },
+          {
+            "$ref": "#/components/parameters/transactionExternalId"
+          },
+          {
+            "$ref": "#/components/parameters/start_date"
+          },
+          {
+            "$ref": "#/components/parameters/end_date"
+          },
+          {
+            "$ref": "#/components/parameters/matched"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Transactions"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Transactions"
+        ],
+        "operationId": "createTransaction",
+        "summary": "Create a Transaction",
+        "description": "Important notes:\n- *Do not submit authorizations* as purchases.\n- The amount for a Purchase transaction *should not include cashback*\n  if it was part of the transaction.\n- Transactions must be uploaded *within 3 days* of when they take place.\n",
+        "security": [
+          {
+            "triple_auth": [
+              "api.tripleup.com/partner.publishers"
+            ]
+          }
+        ],
+        "requestBody": {
+          "$ref": "#/components/requestBodies/TransactionPost"
+        },
+        "responses": {
+          "201": {
+            "$ref": "#/components/responses/Transaction"
+          },
+          "409": {
+            "$ref": "#/components/responses/DuplicateEntity"
+          }
+        }
+      }
+    },
+    "/partner/transactions/{id}": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/entityId"
+        }
+      ],
+      "get": {
+        "tags": [
+          "Transactions"
+        ],
+        "operationId": "getTransactionById",
+        "summary": "Get a Transaction",
+        "security": [
+          {
+            "triple_auth": [
+              "api.tripleup.com/partner.publishers"
+            ]
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/Transaction"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AffiliateLinkRequestBody": {
+        "type": "object",
+        "oneOf": [
+          {
+            "required": [
+              "card_account_id",
+              "offer_id",
+              "program_id"
+            ],
+            "properties": {
+              "card_account_id": {
+                "type": "string",
+                "description": "Partner-defined, external Card Account ID. If the Card Account does not exist for the specified Program, it will be created with an \"enrolled\" date of the current day (UTC-12).\n"
+              },
+              "offer_id": {
+                "type": "string",
+                "description": "Triple Offer ID, provided by the API or offers file."
+              },
+              "program_id": {
+                "type": "string",
+                "description": "The partner-defined, external Card Program ID."
+              },
+              "publisher_id": {
+                "type": "string",
+                "description": "The partner-defined, external Publisher ID. <em>Required for Portfolio Managers.</em>\n"
+              }
+            }
+          },
+          {
+            "required": [
+              "merchant_id",
+              "user_token"
+            ],
+            "deprecated": true,
+            "properties": {
+              "merchant_id": {
+                "deprecated": true,
+                "type": "string"
+              },
+              "user_token": {
+                "deprecated": true,
+                "type": "string"
+              }
+            }
+          }
+        ]
+      },
+      "Amount": {
+        "type": "number",
+        "description": "An amount in dollars with decimal cents",
+        "format": "double"
+      },
+      "CardId": {
+        "maxLength": 64,
+        "minLength": 8,
+        "pattern": "^[-0-9.A-Z_a-z]*$",
+        "type": "string",
+        "description": "A card identifier"
+      },
+      "MerchantId": {
+        "maxLength": 64,
+        "minLength": 4,
+        "pattern": "^[-0-9.A-Z_a-z]*$",
+        "type": "string",
+        "description": "A merchant identifier"
+      },
+      "TransactionId": {
+        "maxLength": 64,
+        "minLength": 8,
+        "pattern": "^[-0-9.A-Z_a-z]*$",
+        "type": "string",
+        "description": "A transaction identifier"
+      },
+      "TransactionDetail": {
+        "required": [
+          "card_id",
+          "merchant_id",
+          "purchant_amount",
+          "transaction_date_time"
+        ],
+        "type": "object",
+        "properties": {
+          "card_id": {
+            "$ref": "#/components/schemas/CardId"
+          },
+          "merchant_id": {
+            "$ref": "#/components/schemas/MerchantId"
+          },
+          "transaction_amount": {
+            "$ref": "#/components/schemas/Amount"
+          },
+          "transaction_date_time": {
+            "type": "string",
+            "description": "When the purchase transaction occurred",
+            "format": "date-time"
+          }
+        },
+        "description": "Details for a transaction"
+      },
+      "RewardWebhook": {
+        "required": [
+          "message",
+          "card_id",
+          "merchant_id",
+          "merchant_name",
+          "transaction_id",
+          "transaction_amount",
+          "reward_amount"
+        ],
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "The message for the card holder"
+          },
+          "card_id": {
+            "type": "string",
+            "description": "The `card_id` originally registered with triple"
+          },
+          "merchant_id": {
+            "type": "string",
+            "description": "The identifier of the merchant"
+          },
+          "merchant_name": {
+            "type": "string",
+            "description": "The full name of the merchant offering the reward"
+          },
+          "transaction_id": {
+            "type": "string",
+            "description": "The matching transaction which caused the reward to be triggered"
+          },
+          "transaction_amount": {
+            "type": "string",
+            "description": "The amount of initial transaction"
+          },
+          "reward_amount": {
+            "type": "string",
+            "description": "The amount of the reward earned"
+          }
+        }
+      },
+      "AffiliateSuccess": {
+        "type": "object",
+        "example": {
+          "url": "https://example.com/affiliate-link-consumer?id=long-unique-id"
+        },
+        "properties": {
+          "url": {
+            "type": "string",
+            "description": "A URL for a link for the consumer"
+          }
+        }
+      },
+      "AffiliateFailure": {
+        "type": "object",
+        "example": {
+          "message": "merchant_id AcmeWidgets does not exist."
+        },
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "A description of the failure."
+          }
+        }
+      },
+      "SuccessBody": {
+        "type": "object",
+        "example": {
+          "success": true,
+          "message": "Processed"
+        },
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "Was this request successful?"
+          },
+          "message": {
+            "type": "string",
+            "description": "A description of a failure or of the successful action taken"
+          }
+        }
+      },
+      "FailureBody": {
+        "type": "object",
+        "example": {
+          "success": false,
+          "message": "Something went wrong"
+        },
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "\"false\" to indicate failure."
+          },
+          "message": {
+            "type": "string",
+            "description": "A description of the failure."
+          }
+        }
+      },
+      "CardExists": {
+        "type": "object",
+        "example": {
+          "success": false,
+          "message": "Card already exists"
+        },
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "\"false\" to indicate failure."
+          },
+          "message": {
+            "type": "string",
+            "description": "A description of the failure."
+          }
+        }
+      },
+      "DuplicateTransaction": {
+        "type": "object",
+        "example": {
+          "success": false,
+          "message": "Duplicate Transaction"
+        },
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "\"false\" to indicate failure."
+          },
+          "message": {
+            "type": "string",
+            "description": "A description of the failure."
+          }
+        }
+      },
+      "Address": {
+        "type": "object",
+        "description": "A physical address in the world.\n\nAddresses may be normalized by Triple for countries with known,\nstandardized formatting rules.\n",
+        "required": [
+          "complete_address"
+        ],
+        "properties": {
+          "complete_address": {
+            "description": "The complete address, as would be written out for mail\ndelivery or route navigation.\n",
+            "example": "7370 BAKER ST STE 100\nPITTSBURGH, PA 15206",
+            "maxLength": 500,
+            "minLength": 1,
+            "type": "string"
+          },
+          "line_1": {
+            "example": "7370 BAKER ST STE 100",
+            "maxLength": 200,
+            "minLength": 3,
+            "type": "string"
+          },
+          "line_2": {
+            "maxLength": 200,
+            "minLength": 3,
+            "type": "string"
+          },
+          "locality": {
+            "description": "City or locality name",
+            "example": "PITTSBURGH",
+            "maxLength": 100,
+            "minLength": 1,
+            "type": "string"
+          },
+          "province": {
+            "description": "State abbreviation or province name",
+            "example": "PA",
+            "maxLength": 75,
+            "minLength": 1,
+            "type": "string"
+          },
+          "postal_code": {
+            "description": "ZIP Code™, ZIP+4, or postal code",
+            "example": "15206",
+            "maxLength": 15,
+            "minLength": 1,
+            "type": "string"
+          },
+          "country_code": {
+            "description": "2-letter ISO-3166 country code",
+            "example": "US",
+            "maxLength": 2,
+            "minLength": 2,
+            "pattern": "^[A-Z]{2}$",
+            "type": "string"
+          },
+          "latitude": {
+            "$ref": "#/components/schemas/Latitude"
+          },
+          "longitude": {
+            "$ref": "#/components/schemas/Longitude"
+          }
+        }
+      },
+      "CardAccount": {
+        "type": "object",
+        "required": [
+          "id",
+          "card_program_id",
+          "external_id",
+          "status",
+          "created_at",
+          "updated_at"
+        ],
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/EntityId"
+          },
+          "card_program_id": {
+            "$ref": "#/components/schemas/CardProgram/properties/id"
+          },
+          "external_id": {
+            "$ref": "#/components/schemas/ExternalId"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ENROLLED",
+              "NOT_ENROLLED",
+              "CLOSED"
+            ],
+            "default": "ENROLLED",
+            "description": "- `ENROLLED` - The account is enrolled for rewards\n- `NOT_ENROLLED` - The account is not enrolled for rewards\n- `CLOSED` - The account is closed and cannot receive rewards\n"
+          },
+          "created_at": {
+            "$ref": "#/components/schemas/CreatedAt"
+          },
+          "updated_at": {
+            "$ref": "#/components/schemas/UpdatedAt"
+          }
+        }
+      },
+      "CardBIN": {
+        "description": "The Bank Identification Number (BIN) of a payment card.\n",
+        "example": "444789",
+        "maxLength": 6,
+        "minLength": 1,
+        "pattern": "^\\d{1,6}X*$",
+        "type": "string"
+      },
+      "CardAccountIdentifier": {
+        "type": "object",
+        "description": "Must provide either a `card_account_id`, or\nan `external_card_account_id`, optionally with\na `publisher_external_id` and `card_program_id`\nspecified if the `external_card_account_id`\ndoes not uniquely resolve.\n",
+        "oneOf": [
+          {
+            "required": [
+              "card_account_id"
+            ],
+            "properties": {
+              "card_account_id": {
+                "$ref": "#/components/schemas/EntityId"
+              }
+            }
+          },
+          {
+            "required": [
+              "card_account_external_id"
+            ],
+            "properties": {
+              "card_account_external_id": {
+                "$ref": "#/components/schemas/ExternalId"
+              },
+              "card_program_external_id": {
+                "$ref": "#/components/schemas/CardProgram/properties/external_id"
+              },
+              "publisher_external_id": {
+                "$ref": "#/components/schemas/ExternalId"
+              }
+            }
+          }
+        ]
+      },
+      "CardProgram": {
+        "type": "object",
+        "required": [
+          "id",
+          "publisher_id",
+          "external_id",
+          "name",
+          "program_currency",
+          "created_at",
+          "updated_at"
+        ],
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/EntityId"
+          },
+          "publisher_id": {
+            "$ref": "#/components/schemas/Publisher/properties/id"
+          },
+          "external_id": {
+            "$ref": "#/components/schemas/ExternalId"
+          },
+          "name": {
+            "description": "Display name of the Card Program",
+            "maxLength": 100,
+            "minLength": 1,
+            "pattern": "^(?!\\s)[\\.]+(?<!\\s)$",
+            "type": "string"
+          },
+          "program_currency": {
+            "$ref": "#/components/schemas/CurrencyCode"
+          },
+          "card_bins": {
+            "description": "The Bank Identification Numbers for cards in this Card Program.\n\nProviding these values helps Triple validate Transactions during\nreward processing and enforce card requirements during purchases\nthrough Affiliate Offers.\n",
+            "type": "array",
+            "maxItems": 100,
+            "items": {
+              "$ref": "#/components/schemas/CardBIN"
+            }
+          },
+          "created_at": {
+            "$ref": "#/components/schemas/CreatedAt"
+          },
+          "updated_at": {
+            "$ref": "#/components/schemas/UpdatedAt"
+          }
+        }
+      },
+      "CreatedAt": {
+        "description": "RFC 3339 date time when this entity was created",
+        "example": "2021-12-01T01:59:59.000Z",
+        "format": "date-time",
+        "readOnly": true,
+        "type": "string"
+      },
+      "CurrencyCode": {
+        "default": "USD",
+        "description": "3-character ISO-4217 currency code. Note that some values are not\nsupported, particularly test and fund codes.\n",
+        "example": "USD",
+        "maxLength": 3,
+        "minLength": 3,
+        "pattern": "^[A-Z]{3}$",
+        "type": "string"
+      },
+      "DayParts": {
+        "type": "object",
+        "properties": {
+          "sunday": {
+            "$ref": "#/components/schemas/DayPartTimes"
+          },
+          "monday": {
+            "$ref": "#/components/schemas/DayPartTimes"
+          },
+          "tuesday": {
+            "$ref": "#/components/schemas/DayPartTimes"
+          },
+          "wednesday": {
+            "$ref": "#/components/schemas/DayPartTimes"
+          },
+          "thursday": {
+            "$ref": "#/components/schemas/DayPartTimes"
+          },
+          "friday": {
+            "$ref": "#/components/schemas/DayPartTimes"
+          },
+          "saturday": {
+            "$ref": "#/components/schemas/DayPartTimes"
+          }
+        }
+      },
+      "DayPartTimes": {
+        "type": "object",
+        "properties": {
+          "times": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 3,
+            "items": {
+              "type": "string",
+              "pattern": "^([01][0-9]|2[0-3]):(00|15|30|45)-([01][0-9]|2[0-3]|24(?=:00)):(00|15|30|45)$",
+              "example": "00:30-13:30"
+            }
+          }
+        }
+      },
+      "EntityId": {
+        "description": "The Triple-defined ID for the entity",
+        "example": "triple-abc-123",
+        "maxLength": 100,
+        "minLength": 1,
+        "type": "string"
+      },
+      "Error": {
+        "title": "Default error template",
+        "description": "Indicates what error or errors were encountered while\nprocessing this request.\n",
+        "type": "object",
+        "required": [
+          "detail"
+        ],
+        "properties": {
+          "detail": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "array",
+                "items": {
+                  "oneOf": [
+                    {
+                      "type": "object"
+                    },
+                    {
+                      "type": "string"
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      },
+      "ExternalId": {
+        "description": "Partner-provided, external ID. External IDs should be **stable** and\n**never sensitive**.\n\nExternal IDs do not need to be globally unique, but we encourage\nthe use of UUIDs. They must be unique for this entity type within\nthe scope of its parent entity, if it has one.\n\nTo protect against accidental inclusion of sensitive personal\ninformation, external IDs may not be 9-digit numbers or use the\nUS Tax ID format (###-##-####).\n",
+        "maxLength": 50,
+        "minLength": 1,
+        "pattern": "^(?!\\d{9}$|\\d{3}-\\d\\d-\\d{4}$)[a-z0-9]([-_\\.a-z0-9]{0,48}[a-z0-9])?$",
+        "type": "string"
+      },
+      "FilterCategory": {
+        "type": "object",
+        "description": "An industry segment that best categorizes an offer",
+        "required": [
+          "category"
+        ],
+        "properties": {
+          "category": {
+            "$ref": "#/components/schemas/Offer/properties/category"
+          }
+        }
+      },
+      "FilterOnlinePhysical": {
+        "type": "object",
+        "description": "Indicates if an offer is online, in-person or both",
+        "required": [
+          "mode"
+        ],
+        "properties": {
+          "mode": {
+            "$ref": "#/components/schemas/Offer/properties/mode"
+          }
+        }
+      },
+      "FilterType": {
+        "type": "object",
+        "description": "The type of offer (eg. Affiliate, Card-Linked, etc.)",
+        "required": [
+          "type"
+        ],
+        "properties": {
+          "type": {
+            "$ref": "#/components/schemas/Offer/properties/type"
+          }
+        }
+      },
+      "GeoTarget": {
+        "type": "object",
+        "description": "Cardholder location information used for OfferDisplay",
+        "oneOf": [
+          {
+            "required": [
+              "postal_code",
+              "country_code"
+            ],
+            "properties": {
+              "postal_code": {
+                "$ref": "#/components/schemas/Address/properties/postal_code"
+              },
+              "country_code": {
+                "$ref": "#/components/schemas/Address/properties/country_code"
+              },
+              "radius": {
+                "$ref": "#/components/schemas/Radius"
+              }
+            }
+          },
+          {
+            "required": [
+              "latitude",
+              "longitude"
+            ],
+            "properties": {
+              "latitude": {
+                "$ref": "#/components/schemas/Address/properties/latitude"
+              },
+              "longitude": {
+                "$ref": "#/components/schemas/Address/properties/longitude"
+              },
+              "radius": {
+                "$ref": "#/components/schemas/Radius"
+              }
+            }
+          }
+        ]
+      },
+      "Healthcheck": {
+        "type": "object",
+        "required": [
+          "api_version",
+          "build"
+        ],
+        "properties": {
+          "api_version": {
+            "description": "The semantic version of the API",
+            "type": "string"
+          },
+          "build": {
+            "description": "A commit hash of the build",
+            "type": "string"
+          }
+        }
+      },
+      "Latitude": {
+        "example": 40.440624,
+        "maximum": 90,
+        "minimum": -90,
+        "type": "number"
+      },
+      "Longitude": {
+        "example": -79.995888,
+        "maximum": 180,
+        "minimum": -180,
+        "type": "number"
+      },
+      "Merchant": {
+        "type": "object",
+        "description": "A Merchant (or brand) is a business or retailer with one or more\nMerchant Locations (online or physical locations). Consumers who make\npurchases at Merchants with valid Offers may receive Rewards.\n",
+        "required": [
+          "id",
+          "assumed_name",
+          "address",
+          "merchant_category_code"
+        ],
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/EntityId"
+          },
+          "external_id": {
+            "$ref": "#/components/schemas/ExternalId"
+          },
+          "assumed_name": {
+            "description": "The (doing-business-as) name of the Merchant.",
+            "maxLength": 100,
+            "minLength": 1,
+            "type": "string"
+          },
+          "address": {
+            "$ref": "#/components/schemas/Address"
+          },
+          "merchant_category_code": {
+            "$ref": "#/components/schemas/MerchantCategoryCode"
+          },
+          "logo_url": {
+            "maxLength": 2000,
+            "pattern": "^https://.+$",
+            "type": "string"
+          }
+        }
+      },
+      "MerchantCategoryCode": {
+        "type": "object",
+        "required": [
+          "code",
+          "description"
+        ],
+        "properties": {
+          "code": {
+            "description": "The 4-digit Merchant Category Code",
+            "example": "7998",
+            "maxLength": 4,
+            "minLength": 4,
+            "pattern": "^\\d{4}$",
+            "type": "string"
+          },
+          "description": {
+            "description": "The description of the Merchant Category Code",
+            "example": "Aquariums, Dolphinariums, Seaquariums, and Zoos",
+            "readOnly": true,
+            "type": "string"
+          }
+        }
+      },
+      "MerchantLocation": {
+        "type": "object",
+        "description": "A specific, singular physical or online store for a particular Merchant.\n\nMerchant Locations should specify Processor Merchant IDs (MIDs) so that\nTransactions at those locations can be more accurately matched to\nOffers.\n",
+        "required": [
+          "id",
+          "external_id",
+          "merchant_id",
+          "is_online",
+          "address"
+        ],
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/EntityId"
+          },
+          "external_id": {
+            "$ref": "#/components/schemas/ExternalId"
+          },
+          "merchant_id": {
+            "$ref": "#/components/schemas/Merchant/properties/id"
+          },
+          "location_name": {
+            "description": "The name of the Merchant Location. If not specified, the Merchant\nname is used.\n",
+            "maxLength": 100,
+            "minLength": 1,
+            "type": "string"
+          },
+          "is_online": {
+            "description": "Indicates whether or not this is an online location.",
+            "type": "boolean"
+          },
+          "email": {
+            "description": "An email address for the location.",
+            "maxLength": 200,
+            "type": "string"
+          },
+          "phone_number": {
+            "description": "A phone number for the location.",
+            "maxLength": 16,
+            "type": "string"
+          },
+          "address": {
+            "$ref": "#/components/schemas/Address"
+          },
+          "processor_merchant_ids": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ProcessorMID"
+            }
+          }
+        }
+      },
+      "Offer": {
+        "type": "object",
+        "required": [
+          "id",
+          "external_id",
+          "type",
+          "mode",
+          "headline",
+          "reward_type",
+          "currency_code",
+          "effective_date",
+          "expiration_date",
+          "minimum_spend",
+          "activation_required",
+          "is_activated"
+        ],
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/EntityId"
+          },
+          "external_id": {
+            "$ref": "#/components/schemas/ExternalId"
+          },
+          "mode": {
+            "description": "The offer delivery mode",
+            "type": "string",
+            "enum": [
+              "ONLINE",
+              "IN_PERSON",
+              "IN_PERSON_AND_ONLINE"
+            ]
+          },
+          "logo_url": {
+            "description": "A link to the merchant's logo",
+            "type": "string",
+            "format": "url",
+            "maxLength": 2000,
+            "pattern": "^https://.+$"
+          },
+          "category": {
+            "description": "The offer category",
+            "type": "string",
+            "enum": [
+              "AUTOMOTIVE",
+              "CHILDREN_AND_FAMILY",
+              "ELECTRONICS",
+              "ENTERTAINMENT",
+              "FINANCIAL_SERVICES",
+              "FOOD",
+              "HEALTH_AND_BEAUTY",
+              "HOME",
+              "OFFICE_AND_BUSINESS",
+              "RETAIL",
+              "TRAVEL",
+              "UTILITIES_AND_TELECOM"
+            ]
+          },
+          "category_tags": {
+            "description": "A single-space-delimited collection of Offer tags",
+            "type": "string"
+          },
+          "currency_code": {
+            "description": "The currency for the offer reward, minimum spend requirement, and\nmaximum reward limitations. The value is an ISO-4217 currency code.\n",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/CurrencyCode"
+              }
+            ]
+          },
+          "category_mccs": {
+            "description": "The Merchant Category Codes included for a categorical offer.\n",
+            "type": "array",
+            "maxItems": 25,
+            "minItems": 1,
+            "items": {
+              "$ref": "#/components/schemas/MerchantCategoryCode"
+            }
+          },
+          "description": {
+            "description": "A long-form text description of or promotional content for an offer\n",
+            "type": "string"
+          },
+          "effective_date": {
+            "description": "The first date on which the offer is valid.",
+            "type": "string",
+            "format": "date",
+            "example": "2021-12-01"
+          },
+          "expiration_date": {
+            "description": "The last date on which the offer is valid.",
+            "type": "string",
+            "format": "date",
+            "example": "2021-12-31"
+          },
+          "is_activated": {
+            "description": "True if an offer has been activated.",
+            "type": "boolean",
+            "default": false
+          },
+          "merchant_id": {
+            "$ref": "#/components/schemas/EntityId"
+          },
+          "headline": {
+            "description": "The headline or title for the offer, appropriate for top-level\ndisplay.\n",
+            "maxLength": 100,
+            "type": "string"
+          },
+          "reward_rate": {
+            "description": "The reward percentage if this offer has a reward_type\nof percentage, the amount will be between 0.0 and 100.0\n",
+            "minimum": 0,
+            "exclusiveMinimum": true,
+            "type": "number"
+          },
+          "reward_type": {
+            "description": "Indicates whether this offer is for a fixed or percentage-based\namount.\n",
+            "type": "string",
+            "enum": [
+              "FIXED",
+              "PERCENTAGE"
+            ]
+          },
+          "reward_value": {
+            "description": "The fixed reward value if this offer has a reward_type\nof fixed, the amount must be greater than or equal to 0\n",
+            "minimum": 0,
+            "exclusiveMinimum": true,
+            "type": "number"
+          },
+          "type": {
+            "description": "The type of offer - card-linked, affiliate, categorical, etc.\n",
+            "type": "string",
+            "enum": [
+              "CARD_LINKED",
+              "AFFILIATE",
+              "CATEGORICAL"
+            ]
+          },
+          "minimum_spend": {
+            "description": "The minimum monetary value that a cardholder must spend for a\ntransaction to qualify for this offer.\n",
+            "minimum": 0,
+            "type": "number"
+          },
+          "maximum_reward_per_transaction": {
+            "description": "The maximum monetary value a cardholder may earn for a\npercentage-based reward on any single transaction.\n",
+            "minimum": 0,
+            "exclusiveMinimum": true,
+            "type": "number"
+          },
+          "maximum_reward_cumulative": {
+            "description": "The maximum monetary value a cardholder may earn for this offer\nacross multiple transactions.\n",
+            "minimum": 0,
+            "exclusiveMinimum": true,
+            "type": "number"
+          },
+          "merchant_website": {
+            "type": "string",
+            "format": "url",
+            "maxLength": 2000,
+            "pattern": "^https://.+$"
+          },
+          "marketing_fee": {
+            "type": "number"
+          },
+          "marketing_fee_type": {
+            "type": "string",
+            "enum": [
+              "FIXED",
+              "PERCENTAGE"
+            ]
+          },
+          "marketing_fee_currency_code": {
+            "$ref": "#/components/schemas/CurrencyCode"
+          },
+          "max_redemptions": {
+            "description": "The maximum number of times a cardholder may receive a reward for\nthis offer over a given period of time.\n\nThe numerator of this value is the number of times a reward can be\nearned. The denominator is the period of time over which the limit\nis enforced.\n\nTime periods must conform to the following restrictions:\n- a period of years (Y) must be 1-3\n- a period of months (M) must be 1-36\n- a period of weeks (W) must be 1-156\n- a period of days (D) must be 1-365\n",
+            "example": "1/3M",
+            "pattern": "^\\d{1,9}\\/\\d{1,3}[YMWD]$",
+            "type": "string"
+          },
+          "activation_required": {
+            "description": "Indicates whether or not a cardholder must activate this offer prior\nto transacting and qualifying for the offer reward; If true,\ntransactions that occur prior to the date of the cardholder\nactivating the offer will not qualify for the offer's reward.\n",
+            "type": "boolean"
+          },
+          "activation_duration_in_days": {
+            "description": "If specified, the number of days (inclusive) for which an offer\nactivation is valid. If a transaction falls outside of this\nduration, it will not qualify for the offer. The day of activation\nis considered day 1. So, if a cardholder activates an offer on\nMonday with a 3 day duration, they must make their transaction on or\nbefore Wednesday.\n",
+            "type": "number"
+          },
+          "terms_and_conditions": {
+            "description": "Terms and conditions for the offer, not inclusive of other limits\nspecified by the offer properties, such as minimum spend, excluded\ndates, or activation requirements.\n",
+            "type": "string"
+          },
+          "valid_day_parts": {
+            "description": "If specified, the days of the week and times during which the offer\nis valid. If unspecified, the offer is valid for all days and times\nduring the week.\n",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DayParts"
+              }
+            ]
+          },
+          "excluded_dates": {
+            "description": "Dates for which the offer is not valid. Transactions made on these\ndates will not qualify for a reward.\n",
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "date",
+              "example": "2021-12-25"
+            }
+          }
+        }
+      },
+      "OfferActivation": {
+        "type": "object",
+        "required": [
+          "id",
+          "card_account_id",
+          "offer",
+          "activated_at"
+        ],
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/EntityId"
+          },
+          "card_account_id": {
+            "$ref": "#/components/schemas/CardAccount/properties/id"
+          },
+          "activated_at": {
+            "format": "date",
+            "type": "string"
+          },
+          "activation_expires_on": {
+            "description": "The last date on which this Offer Activation is valid. If absent,\nthe activation is valid until the Offer expires.\n",
+            "format": "date",
+            "type": "string"
+          },
+          "offer": {
+            "type": "object",
+            "required": [
+              "id",
+              "type",
+              "headline",
+              "reward_type"
+            ],
+            "properties": {
+              "id": {
+                "$ref": "#/components/schemas/Offer/properties/id"
+              },
+              "type": {
+                "$ref": "#/components/schemas/Offer/properties/type"
+              },
+              "headline": {
+                "$ref": "#/components/schemas/Offer/properties/headline"
+              },
+              "reward_rate": {
+                "$ref": "#/components/schemas/Offer/properties/reward_rate"
+              },
+              "reward_type": {
+                "$ref": "#/components/schemas/Offer/properties/reward_type"
+              },
+              "reward_value": {
+                "$ref": "#/components/schemas/Offer/properties/reward_value"
+              },
+              "currency_code": {
+                "$ref": "#/components/schemas/Offer/properties/currency_code"
+              }
+            }
+          },
+          "merchant": {
+            "type": "object",
+            "required": [
+              "name"
+            ],
+            "properties": {
+              "name": {
+                "$ref": "#/components/schemas/Merchant/properties/assumed_name"
+              },
+              "logo_url": {
+                "$ref": "#/components/schemas/Merchant/properties/logo_url"
+              }
+            }
+          }
+        }
+      },
+      "OfferDisplayRule": {
+        "type": "object",
+        "required": [
+          "id",
+          "scope",
+          "type",
+          "value",
+          "action"
+        ],
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/EntityId"
+          },
+          "description": {
+            "description": "Readable description for this rule",
+            "maxLength": 256,
+            "minLength": 5,
+            "type": "string"
+          },
+          "enabled": {
+            "description": "Indicates whether this rule is currently enabled.",
+            "type": "boolean"
+          },
+          "scope": {
+            "type": "object",
+            "required": [
+              "level",
+              "id",
+              "name"
+            ],
+            "properties": {
+              "level": {
+                "type": "string",
+                "enum": [
+                  "PORTFOLIO_MANAGER",
+                  "PORTFOLIO",
+                  "PUBLISHER",
+                  "CARD_PROGRAM"
+                ]
+              },
+              "id": {
+                "$ref": "#/components/schemas/EntityId"
+              },
+              "name": {
+                "type": "string"
+              }
+            }
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "MERCHANT_NAME_EQUAL_TO",
+              "MERCHANT_NAME_LIKE",
+              "MERCHANT_NAME_NOT_EQUAL_TO",
+              "MERCHANT_NAME_NOT_LIKE",
+              "MCC_EQUAL_TO",
+              "MCC_IN_RANGE",
+              "MCC_NOT_EQUAL_TO"
+            ]
+          },
+          "value": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/Merchant/properties/assumed_name"
+              },
+              {
+                "$ref": "#/components/schemas/MerchantCategoryCode/properties/code"
+              },
+              {
+                "type": "string",
+                "description": "An MCC range. Only valid if `MCC_IN_RANGE` is specified.\n",
+                "pattern": "^\\d{4}-\\d{4}$"
+              }
+            ]
+          },
+          "action": {
+            "type": "string",
+            "enum": [
+              "EXCLUDE",
+              "INCLUDE"
+            ]
+          }
+        }
+      },
+      "OfferDetail": {
+        "type": "object",
+        "required": [
+          "id",
+          "type",
+          "mode",
+          "headline",
+          "reward_type",
+          "currency_code",
+          "effective_date",
+          "minimum_spend",
+          "activation_required",
+          "is_activated"
+        ],
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/Offer/properties/id"
+          },
+          "activation_required": {
+            "$ref": "#/components/schemas/Offer/properties/activation_required"
+          },
+          "activation_duration_in_days": {
+            "$ref": "#/components/schemas/Offer/properties/activation_duration_in_days"
+          },
+          "currency_code": {
+            "$ref": "#/components/schemas/Offer/properties/currency_code"
+          },
+          "category": {
+            "$ref": "#/components/schemas/Offer/properties/category"
+          },
+          "category_tags": {
+            "$ref": "#/components/schemas/Offer/properties/category_tags"
+          },
+          "category_mccs": {
+            "$ref": "#/components/schemas/Offer/properties/category_mccs"
+          },
+          "description": {
+            "$ref": "#/components/schemas/Offer/properties/description"
+          },
+          "effective_date": {
+            "$ref": "#/components/schemas/Offer/properties/effective_date"
+          },
+          "excluded_dates": {
+            "$ref": "#/components/schemas/Offer/properties/excluded_dates"
+          },
+          "expiration_date": {
+            "$ref": "#/components/schemas/Offer/properties/expiration_date"
+          },
+          "is_activated": {
+            "$ref": "#/components/schemas/Offer/properties/is_activated"
+          },
+          "headline": {
+            "$ref": "#/components/schemas/Offer/properties/headline"
+          },
+          "max_redemptions": {
+            "$ref": "#/components/schemas/Offer/properties/max_redemptions"
+          },
+          "maximum_reward_per_transaction": {
+            "$ref": "#/components/schemas/Offer/properties/maximum_reward_per_transaction"
+          },
+          "maximum_reward_cumulative": {
+            "$ref": "#/components/schemas/Offer/properties/maximum_reward_cumulative"
+          },
+          "merchant_category_code": {
+            "$ref": "#/components/schemas/MerchantCategoryCode"
+          },
+          "merchant_name": {
+            "description": "The name of the merchant associated with this offer.\n",
+            "type": "string",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Merchant/properties/assumed_name"
+              }
+            ]
+          },
+          "merchant_logo_url": {
+            "$ref": "#/components/schemas/Merchant/properties/logo_url"
+          },
+          "minimum_spend": {
+            "$ref": "#/components/schemas/Offer/properties/minimum_spend"
+          },
+          "mode": {
+            "$ref": "#/components/schemas/Offer/properties/mode"
+          },
+          "reward_rate": {
+            "$ref": "#/components/schemas/Offer/properties/reward_rate"
+          },
+          "reward_value": {
+            "$ref": "#/components/schemas/Offer/properties/reward_value"
+          },
+          "reward_type": {
+            "$ref": "#/components/schemas/Offer/properties/type"
+          },
+          "type": {
+            "$ref": "#/components/schemas/Offer/properties/type"
+          },
+          "valid_day_parts": {
+            "$ref": "#/components/schemas/Offer/properties/valid_day_parts"
+          }
+        }
+      },
+      "OfferLocationGeo": {
+        "description": "The complete address, latitude and longitude of a Merchant Location\n",
+        "type": "object",
+        "required": [
+          "complete_address",
+          "latitude",
+          "longitude"
+        ],
+        "properties": {
+          "complete_address": {
+            "$ref": "#/components/schemas/Address/properties/complete_address"
+          },
+          "latitude": {
+            "$ref": "#/components/schemas/Address/properties/latitude"
+          },
+          "longitude": {
+            "$ref": "#/components/schemas/Address/properties/longitude"
+          }
+        }
+      },
+      "ProcessorMID": {
+        "description": "The Processor Merchant ID (MID) is an unique number used to identify\nthe business for credit and debit card payment processing. Physical\nlocations and online retailers may have multiple MIDs, even for the same\nprocessor network, usually for different departments or checkouts.\n",
+        "type": "object",
+        "required": [
+          "mid",
+          "type"
+        ],
+        "properties": {
+          "mid": {
+            "$ref": "#/components/schemas/ProcessorMIDValue"
+          },
+          "type": {
+            "$ref": "#/components/schemas/ProcessorMIDType"
+          }
+        }
+      },
+      "ProcessorMIDType": {
+        "description": "The type of Merchant ID",
+        "example": "VISA_VMID",
+        "enum": [
+          "AMEX_SE_NUMBER",
+          "DISCOVER_MID",
+          "MC_AUTH_LOC_ID",
+          "MC_AUTH_ACQ_ID",
+          "MC_AUTH_ICA",
+          "MC_CLEARING_LOC_ID",
+          "MC_CLEARING_ACQ_ID",
+          "MC_CLEARING_ICA",
+          "MERCHANT_PROCESSOR",
+          "NCR",
+          "VISA_VMID",
+          "VISA_VSID"
+        ],
+        "type": "string"
+      },
+      "ProcessorMIDValue": {
+        "description": "The Merchant ID (MID) value",
+        "example": "9000012345",
+        "maxLength": 50,
+        "minLength": 1,
+        "type": "string"
+      },
+      "Publisher": {
+        "type": "object",
+        "required": [
+          "id",
+          "assumed_name",
+          "address",
+          "created_at",
+          "updated_at"
+        ],
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/EntityId"
+          },
+          "portfolio_manager_id": {
+            "$ref": "#/components/schemas/EntityId"
+          },
+          "external_id": {
+            "$ref": "#/components/schemas/ExternalId"
+          },
+          "assumed_name": {
+            "description": "Assumed legal name of the Publisher",
+            "maxLength": 100,
+            "minLength": 1,
+            "pattern": "^(?!\\s).+(?<!\\s)$",
+            "type": "string"
+          },
+          "address": {
+            "$ref": "#/components/schemas/Address"
+          },
+          "revenue_share": {
+            "description": "The percent-based revenue share of this Publisher.\n\nOnly Portfolio Managers may set this value for their Publishers. If\nset, this will override the value set at the Portfolio Manager level.\n",
+            "example": 1.125,
+            "maximum": 100,
+            "minimum": 0,
+            "type": "number"
+          },
+          "created_at": {
+            "$ref": "#/components/schemas/CreatedAt"
+          },
+          "updated_at": {
+            "$ref": "#/components/schemas/UpdatedAt"
+          }
+        }
+      },
+      "Radius": {
+        "type": "integer",
+        "description": "The distance in meters from the provided location. Default value\nof `35000m` is adjusted according to population density of a location\n(ie. Rural locations will target a broader search radius than urban\nlocations).\n",
+        "default": 35000
+      },
+      "Transaction": {
+        "type": "object",
+        "required": [
+          "amount",
+          "card_account_id",
+          "created_at",
+          "currency_code",
+          "debit",
+          "description",
+          "external_id",
+          "id",
+          "local_date",
+          "matching_status",
+          "transaction_type",
+          "updated_at"
+        ],
+        "properties": {
+          "id": {
+            "$ref": "#/components/schemas/EntityId"
+          },
+          "card_account_id": {
+            "$ref": "#/components/schemas/EntityId"
+          },
+          "external_id": {
+            "description": "Partner-provided, external ID. External IDs should be\n<strong>stable</strong> and <strong>never sensitive</strong>.\n\nExternal IDs do not need to be globally unique, but we encourage\nthe use of UUIDs. They must be unique for Transactions within\nthe scope of the associated Card Account.\n",
+            "maxLength": 100,
+            "minLength": 1,
+            "pattern": "^[a-z0-9]([-_\\.a-z0-9]{0,48}[a-z0-9])?$",
+            "type": "string"
+          },
+          "local_date": {
+            "description": "The local date on which the transaction occurred",
+            "example": "2021-12-01",
+            "format": "date",
+            "type": "string"
+          },
+          "local_time": {
+            "description": "The local time (HH:mm[:ss[.SSSSSS]]) at which the transaction\noccurred.\n",
+            "example": "13:45:00",
+            "pattern": "^([01]\\d|2[0-3]):[0-5]\\d(:[0-5]\\d(\\.\\d{1,6})?)?$",
+            "type": "string"
+          },
+          "debit": {
+            "description": "Whether this is a debit or credit",
+            "type": "boolean"
+          },
+          "amount": {
+            "description": "The amount of the transaction. An error will be returned if the\nfield contains fractional amounts smaller than those allowed by the\ntransaction's currency code.\n",
+            "example": 12,
+            "minimum": 0,
+            "exclusiveMinimum": true
+          },
+          "currency_code": {
+            "$ref": "#/components/schemas/CurrencyCode"
+          },
+          "transaction_type": {
+            "$ref": "#/components/schemas/TransactionType"
+          },
+          "description": {
+            "description": "The transaction description, usually the merchant name",
+            "example": "Pittsburgh Zoo",
+            "maxLength": 256,
+            "minLength": 1,
+            "type": "string"
+          },
+          "merchant_category_code": {
+            "$ref": "#/components/schemas/MerchantCategoryCode"
+          },
+          "merchant_address": {
+            "$ref": "#/components/schemas/Address"
+          },
+          "processor_mid": {
+            "$ref": "#/components/schemas/ProcessorMIDValue"
+          },
+          "processor_mid_type": {
+            "$ref": "#/components/schemas/ProcessorMIDType"
+          },
+          "matching_status": {
+            "description": "The status of Triple matching the Transaction to Offers.\n\n- `HISTORIC_TRANSACTION` - The Transaction was more than 3 days old\n  when it was submitted to Triple. It is not eligible for a Reward.\n- `NOT_APPLICABLE` - The Transaction is not a Purchase or Return,\n  or is otherwise not eligible for a Reward.\n- `NOT_ENROLLED` - The Card Account was not enrolled for Rewards at\n  the time of the Transaction.\n- `QUEUED` - The Transaction is waiting for Offer matching.\n- `NO_ACTIVE_OFFER` - The Transaction did not match any active Offer\n  or meet Offer terms.\n- `MATCHED` - The Transaction was matched to offers and is\n  potentially eligible for a reward. See `reward_details` for more\n  information.\n",
+            "type": "string",
+            "enum": [
+              "HISTORIC_TRANSACTION",
+              "QUEUED",
+              "NOT_APPLICABLE",
+              "NOT_ENROLLED",
+              "NO_ACTIVE_OFFER",
+              "MATCHED"
+            ]
+          },
+          "reward_details": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": [
+                "offer_id",
+                "status"
+              ],
+              "properties": {
+                "offer_id": {
+                  "$ref": "#/components/schemas/Offer/properties/id"
+                },
+                "amount": {
+                  "description": "The calculated reward amount for this Transaction and Offer.\nThis field may be negative if the Transaction is a Return that\nhas resulted in an adjustment to a previous reward.\n",
+                  "type": "number"
+                },
+                "currency_code": {
+                  "$ref": "#/components/schemas/CurrencyCode"
+                },
+                "status": {
+                  "description": "The Reward status.\n- `REJECTED` - The Transaction did not meet the offer terms.\n- `PENDING_MERCHANT_APPROVAL` - The Transaction is waiting for the\n  Merchant or Content Provider to approve or deny the Reward.\n- `DENIED_BY_MERCHANT` - The Merchant or Content Provider denied\n  the Reward. A reason will be included in `reward_details`.\n- `PENDING_MERCHANT_FUNDING` - The Reward was approved and is\n  awaiting funding by the Merchant.\n- `PENDING_TRANSFER_TO_PUBLISHER` - The Reward is funded and funds\n  are awaiting distribution to the Publisher.\n- `DISTRIBUTED_TO_PUBLISHER` - Reward funds have been sent to the\n  Publisher.\n- `DISTRIBUTED_TO_CARDHOLDER` - The Publisher has reported that the\n  Reward has been given to the cardholder.\n",
+                  "type": "string",
+                  "enum": [
+                    "REJECTED",
+                    "PENDING_MERCHANT_APPROVAL",
+                    "DENIED_BY_MERCHANT",
+                    "PENDING_MERCHANT_FUNDING",
+                    "PENDING_TRANSFER_TO_PUBLISHER",
+                    "DISTRIBUTED_TO_PUBLISHER",
+                    "DISTRIBUTED_TO_CARDHOLDER"
+                  ]
+                },
+                "rejection": {
+                  "description": "The reason this matched offer was not applied to the\nTransaction.\n",
+                  "type": "string",
+                  "enum": [
+                    "PURCHASE_AMOUNT_TOO_LOW",
+                    "ACTIVATION_REQUIRED",
+                    "MAX_USES_MET",
+                    "MAX_REWARD_MET",
+                    "DAY_OF_WEEK_RESTRICTION",
+                    "TIME_OF_WEEK_RESTRICTION",
+                    "EXCLUDED_DATE",
+                    "NON_PARTICIPATING_LOCATION",
+                    "OTHER"
+                  ]
+                },
+                "notes": {
+                  "description": "A text description or additional information about why the\nOffer was rejected or denied by the merchant. This field is\nnot intended to be displayed to cardholders.\n",
+                  "type": "string",
+                  "maxLength": 512
+                }
+              }
+            }
+          },
+          "created_at": {
+            "$ref": "#/components/schemas/CreatedAt"
+          },
+          "updated_at": {
+            "$ref": "#/components/schemas/UpdatedAt"
+          }
+        }
+      },
+      "TransactionType": {
+        "description": "The type of transaction. Triple will only calculate offers based on a\nhistory of Purchases and Refunds.\n",
+        "example": "PURCHASE",
+        "type": "string",
+        "enum": [
+          "CHECK",
+          "DEPOSIT",
+          "FEE",
+          "PAYMENT",
+          "PURCHASE",
+          "REFUND",
+          "TRANSFER",
+          "WITHDRAWAL"
+        ]
+      },
+      "UpdatedAt": {
+        "description": "RFC 3339 date time when this entity was most recently updated",
+        "example": "2021-12-01T01:59:59.000Z",
+        "format": "date-time",
+        "readOnly": true,
+        "type": "string"
+      }
+    },
+    "parameters": {
+      "cardAccountExternalId": {
+        "name": "card_account_external_id",
+        "description": "Partner-provided external ID",
+        "in": "query",
+        "required": false,
+        "schema": {
+          "type": "string",
+          "maxLength": 50,
+          "minLength": 1
+        }
+      },
+      "cardProgramExternalId": {
+        "name": "card_program_external_id",
+        "description": "Partner-provided external ID",
+        "in": "query",
+        "required": false,
+        "schema": {
+          "type": "string",
+          "maxLength": 50,
+          "minLength": 1
+        }
+      },
+      "end_date": {
+        "name": "end_date",
+        "description": "Include only transactions through this date (YYYY-mm-dd)",
+        "in": "query",
+        "required": false,
+        "schema": {
+          "type": "string",
+          "format": "date",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}",
+          "example": "2022-06-30"
+        }
+      },
+      "entityId": {
+        "name": "id",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "$ref": "#/components/schemas/EntityId"
+        }
+      },
+      "matched": {
+        "name": "matched",
+        "description": "Include only transactions matched to an active offer. See the Reward\nDetails for more information, such as whether an award is approved.\n",
+        "in": "query",
+        "required": false,
+        "schema": {
+          "type": "boolean"
+        }
+      },
+      "merchantExternalId": {
+        "name": "merchant_external_id",
+        "description": "Partner-provided external ID",
+        "in": "query",
+        "required": false,
+        "schema": {
+          "type": "string",
+          "maxLength": 50,
+          "minLength": 1
+        }
+      },
+      "merchantLocationExternalId": {
+        "name": "merchant_location_external_id",
+        "description": "Partner-provided external ID",
+        "in": "query",
+        "required": false,
+        "schema": {
+          "type": "string",
+          "maxLength": 50,
+          "minLength": 1
+        }
+      },
+      "offerExternalId": {
+        "name": "merchant_location_external_id",
+        "description": "Partner-provided external ID",
+        "in": "query",
+        "required": false,
+        "schema": {
+          "type": "string",
+          "maxLength": 50,
+          "minLength": 1
+        }
+      },
+      "publisherExternalId": {
+        "name": "publisher_external_id",
+        "description": "Partner-provided external ID",
+        "in": "query",
+        "required": false,
+        "schema": {
+          "type": "string",
+          "maxLength": 50,
+          "minLength": 1
+        }
+      },
+      "start_date": {
+        "name": "start_date",
+        "description": "Include only transactions starting from this date (YYYY-mm-dd)",
+        "in": "query",
+        "required": false,
+        "schema": {
+          "type": "string",
+          "format": "date",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}",
+          "example": "2022-06-01"
+        }
+      },
+      "transactionExternalId": {
+        "name": "transaction_external_id",
+        "description": "Partner-provided external ID",
+        "in": "query",
+        "required": false,
+        "schema": {
+          "type": "string",
+          "maxLength": 100,
+          "minLength": 1
+        }
+      }
+    },
+    "requestBodies": {
+      "CardAccountPatch": {
+        "content": {
+          "application/merge-patch+json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "status"
+              ],
+              "properties": {
+                "status": {
+                  "$ref": "#/components/schemas/CardAccount/properties/status"
+                }
+              }
+            }
+          }
+        }
+      },
+      "CardAccountPost": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "card_program_external_id",
+                "card_accounts",
+                "external_id"
+              ],
+              "properties": {
+                "publisher_external_id": {
+                  "$ref": "#/components/schemas/Publisher/properties/external_id"
+                },
+                "card_program_external_id": {
+                  "$ref": "#/components/schemas/CardProgram/properties/external_id"
+                },
+                "external_id": {
+                  "$ref": "#/components/schemas/CardAccount/properties/external_id"
+                },
+                "status": {
+                  "$ref": "#/components/schemas/CardAccount/properties/status"
+                }
+              }
+            }
+          }
+        }
+      },
+      "CardProgramPatch": {
+        "content": {
+          "application/merge-patch+json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "name"
+              ],
+              "properties": {
+                "name": {
+                  "$ref": "#/components/schemas/CardProgram/properties/name"
+                }
+              }
+            }
+          }
+        }
+      },
+      "CardProgramPost": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "external_id",
+                "name",
+                "program_currency"
+              ],
+              "properties": {
+                "publisher_external_id": {
+                  "$ref": "#/components/schemas/Publisher/properties/external_id"
+                },
+                "external_id": {
+                  "$ref": "#/components/schemas/CardProgram/properties/external_id"
+                },
+                "name": {
+                  "$ref": "#/components/schemas/CardProgram/properties/name"
+                },
+                "program_currency": {
+                  "$ref": "#/components/schemas/CardProgram/properties/program_currency"
+                },
+                "card_bins": {
+                  "$ref": "#/components/schemas/CardProgram/properties/card_bins"
+                }
+              }
+            }
+          }
+        }
+      },
+      "MerchantPatch": {
+        "content": {
+          "application/merge-patch+json": {
+            "schema": {
+              "type": "object",
+              "anyOf": [
+                {
+                  "required": [
+                    "assumed_name"
+                  ]
+                },
+                {
+                  "required": [
+                    "address"
+                  ]
+                },
+                {
+                  "required": [
+                    "merchant_category_code"
+                  ]
+                },
+                {
+                  "required": [
+                    "logo_url"
+                  ]
+                }
+              ],
+              "properties": {
+                "assumed_name": {
+                  "$ref": "#/components/schemas/Merchant/properties/assumed_name"
+                },
+                "address": {
+                  "$ref": "#/components/schemas/Address"
+                },
+                "merchant_category_code": {
+                  "$ref": "#/components/schemas/MerchantCategoryCode"
+                },
+                "logo_url": {
+                  "$ref": "#/components/schemas/Merchant/properties/logo_url"
+                }
+              }
+            }
+          }
+        }
+      },
+      "MerchantPost": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "external_id",
+                "assumed_name",
+                "address"
+              ],
+              "properties": {
+                "external_id": {
+                  "$ref": "#/components/schemas/Merchant/properties/external_id"
+                },
+                "assumed_name": {
+                  "$ref": "#/components/schemas/Merchant/properties/assumed_name"
+                },
+                "address": {
+                  "$ref": "#/components/schemas/Address"
+                },
+                "merchant_category_code": {
+                  "$ref": "#/components/schemas/MerchantCategoryCode"
+                },
+                "logo_url": {
+                  "$ref": "#/components/schemas/Merchant/properties/logo_url"
+                }
+              }
+            }
+          }
+        }
+      },
+      "MerchantLocationPatch": {
+        "content": {
+          "application/merge-patch+json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "location_name": {
+                  "$ref": "#/components/schemas/MerchantLocation/properties/location_name"
+                },
+                "address": {
+                  "$ref": "#/components/schemas/Address"
+                },
+                "email": {
+                  "$ref": "#/components/schemas/MerchantLocation/properties/email"
+                },
+                "phone_number": {
+                  "$ref": "#/components/schemas/MerchantLocation/properties/phone_number"
+                },
+                "processor_merchant_ids": {
+                  "$ref": "#/components/schemas/MerchantLocation/properties/processor_merchant_ids"
+                }
+              }
+            }
+          }
+        }
+      },
+      "MerchantLocationPost": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "merchant_id",
+                "external_id",
+                "is_online",
+                "address"
+              ],
+              "properties": {
+                "merchant_id": {
+                  "$ref": "#/components/schemas/MerchantLocation/properties/merchant_id"
+                },
+                "external_id": {
+                  "$ref": "#/components/schemas/MerchantLocation/properties/external_id"
+                },
+                "location_name": {
+                  "$ref": "#/components/schemas/MerchantLocation/properties/location_name"
+                },
+                "is_online": {
+                  "$ref": "#/components/schemas/MerchantLocation/properties/is_online"
+                },
+                "address": {
+                  "$ref": "#/components/schemas/Address"
+                },
+                "email": {
+                  "$ref": "#/components/schemas/MerchantLocation/properties/email"
+                },
+                "phone_number": {
+                  "$ref": "#/components/schemas/MerchantLocation/properties/phone_number"
+                },
+                "processor_merchant_ids": {
+                  "$ref": "#/components/schemas/MerchantLocation/properties/processor_merchant_ids"
+                }
+              }
+            }
+          }
+        }
+      },
+      "OfferPatch": {
+        "content": {
+          "application/merge-patch+json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "category_mccs": {
+                  "$ref": "#/components/schemas/Offer/properties/category_mccs"
+                },
+                "headline": {
+                  "$ref": "#/components/schemas/Offer/properties/headline"
+                },
+                "category": {
+                  "$ref": "#/components/schemas/Offer/properties/category"
+                },
+                "expiration_date": {
+                  "$ref": "#/components/schemas/Offer/properties/expiration_date"
+                },
+                "terms_and_conditions": {
+                  "$ref": "#/components/schemas/Offer/properties/terms_and_conditions"
+                },
+                "merchant_website": {
+                  "$ref": "#/components/schemas/Offer/properties/merchant_website"
+                },
+                "excluded_dates": {
+                  "$ref": "#/components/schemas/Offer/properties/excluded_dates"
+                }
+              }
+            }
+          }
+        }
+      },
+      "OfferPost": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "external_id",
+                "type",
+                "headline",
+                "reward_type",
+                "currency_code",
+                "effective_date",
+                "expiration_date",
+                "minimum_spend",
+                "activation_required"
+              ],
+              "properties": {
+                "external_id": {
+                  "$ref": "#/components/schemas/Offer/properties/external_id"
+                },
+                "type": {
+                  "$ref": "#/components/schemas/Offer/properties/type"
+                },
+                "currency_code": {
+                  "$ref": "#/components/schemas/Offer/properties/currency_code"
+                },
+                "category_mccs": {
+                  "$ref": "#/components/schemas/Offer/properties/category_mccs"
+                },
+                "merchant_id": {
+                  "$ref": "#/components/schemas/Offer/properties/merchant_id"
+                },
+                "headline": {
+                  "$ref": "#/components/schemas/Offer/properties/headline"
+                },
+                "category": {
+                  "$ref": "#/components/schemas/Offer/properties/category"
+                },
+                "reward_rate": {
+                  "$ref": "#/components/schemas/Offer/properties/reward_rate"
+                },
+                "reward_type": {
+                  "$ref": "#/components/schemas/Offer/properties/reward_type"
+                },
+                "reward_value": {
+                  "$ref": "#/components/schemas/Offer/properties/reward_value"
+                },
+                "effective_date": {
+                  "$ref": "#/components/schemas/Offer/properties/effective_date"
+                },
+                "expiration_date": {
+                  "$ref": "#/components/schemas/Offer/properties/expiration_date"
+                },
+                "minimum_spend": {
+                  "$ref": "#/components/schemas/Offer/properties/minimum_spend"
+                },
+                "maximum_reward_per_transaction": {
+                  "$ref": "#/components/schemas/Offer/properties/maximum_reward_per_transaction"
+                },
+                "maximum_reward_cumulative": {
+                  "$ref": "#/components/schemas/Offer/properties/maximum_reward_cumulative"
+                },
+                "terms_and_conditions": {
+                  "$ref": "#/components/schemas/Offer/properties/terms_and_conditions"
+                },
+                "merchant_website": {
+                  "$ref": "#/components/schemas/Offer/properties/merchant_website"
+                },
+                "marketing_fee": {
+                  "$ref": "#/components/schemas/Offer/properties/marketing_fee"
+                },
+                "marketing_fee_type": {
+                  "$ref": "#/components/schemas/Offer/properties/marketing_fee_type"
+                },
+                "marketing_fee_currency_code": {
+                  "$ref": "#/components/schemas/Offer/properties/marketing_fee_currency_code"
+                },
+                "max_redemptions": {
+                  "$ref": "#/components/schemas/Offer/properties/max_redemptions"
+                },
+                "activation_required": {
+                  "$ref": "#/components/schemas/Offer/properties/activation_required"
+                },
+                "activation_duration_in_days": {
+                  "$ref": "#/components/schemas/Offer/properties/activation_duration_in_days"
+                },
+                "valid_day_parts": {
+                  "$ref": "#/components/schemas/Offer/properties/valid_day_parts"
+                },
+                "excluded_dates": {
+                  "$ref": "#/components/schemas/Offer/properties/excluded_dates"
+                }
+              }
+            }
+          }
+        }
+      },
+      "OfferActivationPost": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "card_account_id",
+                "offer_id",
+                "local_time_offset"
+              ],
+              "properties": {
+                "card_account_id": {
+                  "$ref": "#/components/schemas/CardAccount/properties/id"
+                },
+                "offer_id": {
+                  "$ref": "#/components/schemas/Offer/properties/id"
+                },
+                "local_time_offset": {
+                  "description": "The local, UTC time (zone) offset for the Customer. This is\nused to determine the start of the Offer Activation.\n",
+                  "example": "-05:00",
+                  "format": "time-offset",
+                  "pattern": "^Z|[-+]([01]\\d|2[0-4]):([0-4]\\d|5[0-9])",
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "OfferDisplayRulePatch": {
+        "content": {
+          "application/merge-patch+json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "description": {
+                  "$ref": "#/components/schemas/OfferDisplayRule/properties/description"
+                },
+                "enabled": {
+                  "$ref": "#/components/schemas/OfferDisplayRule/properties/enabled"
+                },
+                "scope": {
+                  "type": "object",
+                  "required": [
+                    "level",
+                    "id"
+                  ],
+                  "properties": {
+                    "level": {
+                      "$ref": "#/components/schemas/OfferDisplayRule/properties/scope/properties/level"
+                    },
+                    "id": {
+                      "$ref": "#/components/schemas/OfferDisplayRule/properties/scope/properties/id"
+                    }
+                  }
+                },
+                "type": {
+                  "$ref": "#/components/schemas/OfferDisplayRule/properties/type"
+                },
+                "value": {
+                  "$ref": "#/components/schemas/OfferDisplayRule/properties/value"
+                },
+                "action": {
+                  "$ref": "#/components/schemas/OfferDisplayRule/properties/action"
+                }
+              }
+            }
+          }
+        }
+      },
+      "OfferDisplayRulePost": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "scope",
+                "type",
+                "value",
+                "action"
+              ],
+              "properties": {
+                "description": {
+                  "$ref": "#/components/schemas/OfferDisplayRule/properties/description"
+                },
+                "enabled": {
+                  "default": true,
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/OfferDisplayRule/properties/enabled"
+                    }
+                  ]
+                },
+                "scope": {
+                  "type": "object",
+                  "required": [
+                    "level",
+                    "id"
+                  ],
+                  "properties": {
+                    "level": {
+                      "$ref": "#/components/schemas/OfferDisplayRule/properties/scope/properties/level"
+                    },
+                    "id": {
+                      "$ref": "#/components/schemas/OfferDisplayRule/properties/scope/properties/id"
+                    }
+                  }
+                },
+                "type": {
+                  "$ref": "#/components/schemas/OfferDisplayRule/properties/type"
+                },
+                "value": {
+                  "$ref": "#/components/schemas/OfferDisplayRule/properties/value"
+                },
+                "action": {
+                  "$ref": "#/components/schemas/OfferDisplayRule/properties/action"
+                }
+              }
+            }
+          }
+        }
+      },
+      "OfferDetailsGetOrPost": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "card_account_identifier",
+                "proximity_target"
+              ],
+              "properties": {
+                "proximity_target": {
+                  "$ref": "#/components/schemas/GeoTarget"
+                },
+                "card_account_identifier": {
+                  "$ref": "#/components/schemas/CardAccountIdentifier"
+                },
+                "ml_id": {
+                  "description": "The Triple ID of a related Merchant Location whose details should be\nincluded in the response.\n",
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MerchantLocation/properties/id"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "OfferSearchGetOrPost": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "card_account_identifier",
+                "proximity_target"
+              ],
+              "properties": {
+                "proximity_target": {
+                  "$ref": "#/components/schemas/GeoTarget"
+                },
+                "card_account_identifier": {
+                  "$ref": "#/components/schemas/CardAccountIdentifier"
+                },
+                "text_query": {
+                  "description": "Text query used to search offers.\n",
+                  "example": "italian food",
+                  "maxLength": 75,
+                  "minLength": 0,
+                  "type": "string"
+                },
+                "page_size": {
+                  "description": "The number of offers returned for the current page of search results.\n",
+                  "maximum": 50,
+                  "minimum": 1,
+                  "default": 25,
+                  "type": "integer"
+                },
+                "page_offset": {
+                  "description": "The beginning index for the current page of offers.",
+                  "minimum": 0,
+                  "maximum": 975,
+                  "default": 0,
+                  "type": "integer"
+                },
+                "apply_filter": {
+                  "type": "object",
+                  "description": "Applies filters against any of the following offer fields:\n`type` | `category` | `mode`\n",
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/FilterType"
+                    },
+                    {
+                      "$ref": "#/components/schemas/FilterCategory"
+                    },
+                    {
+                      "$ref": "#/components/schemas/FilterOnlinePhysical"
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "PublisherPatch": {
+        "content": {
+          "application/merge-patch+json": {
+            "schema": {
+              "type": "object",
+              "anyOf": [
+                {
+                  "required": [
+                    "assumed_name"
+                  ]
+                },
+                {
+                  "required": [
+                    "address"
+                  ]
+                }
+              ],
+              "properties": {
+                "assumed_name": {
+                  "$ref": "#/components/schemas/Publisher/properties/assumed_name"
+                },
+                "address": {
+                  "$ref": "#/components/schemas/Publisher/properties/address"
+                }
+              }
+            }
+          }
+        }
+      },
+      "PublisherPost": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "external_id",
+                "assumed_name",
+                "address"
+              ],
+              "properties": {
+                "external_id": {
+                  "$ref": "#/components/schemas/Publisher/properties/external_id"
+                },
+                "assumed_name": {
+                  "$ref": "#/components/schemas/Publisher/properties/assumed_name"
+                },
+                "address": {
+                  "$ref": "#/components/schemas/Publisher/properties/address"
+                },
+                "revenue_share": {
+                  "$ref": "#/components/schemas/Publisher/properties/revenue_share"
+                }
+              }
+            }
+          }
+        }
+      },
+      "TransactionPost": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "card_program_external_id",
+                "card_account_external_id",
+                "external_id",
+                "local_date",
+                "debit",
+                "amount",
+                "transaction_type",
+                "description",
+                "merchant_category_code",
+                "merchant_address",
+                "processor_mid",
+                "processor_mid_type"
+              ],
+              "properties": {
+                "publisher_external_id": {
+                  "$ref": "#/components/schemas/Publisher/properties/external_id"
+                },
+                "card_program_external_id": {
+                  "$ref": "#/components/schemas/CardProgram/properties/external_id"
+                },
+                "card_account_external_id": {
+                  "$ref": "#/components/schemas/CardAccount/properties/external_id"
+                },
+                "external_id": {
+                  "$ref": "#/components/schemas/ExternalId"
+                },
+                "card_bin": {
+                  "$ref": "#/components/schemas/CardBIN"
+                },
+                "card_last_4": {
+                  "description": "The last four digits of the Primary Account Number (PAN) of\nthe card used for this Transaction.\n",
+                  "maxLength": 4,
+                  "minLength": 4,
+                  "pattern": "^\\d{4}$"
+                },
+                "local_date": {
+                  "$ref": "#/components/schemas/Transaction/properties/local_date"
+                },
+                "local_time": {
+                  "$ref": "#/components/schemas/Transaction/properties/local_time"
+                },
+                "debit": {
+                  "$ref": "#/components/schemas/Transaction/properties/debit"
+                },
+                "amount": {
+                  "$ref": "#/components/schemas/Transaction/properties/amount"
+                },
+                "currency_code": {
+                  "$ref": "#/components/schemas/Transaction/properties/currency_code"
+                },
+                "transaction_type": {
+                  "$ref": "#/components/schemas/Transaction/properties/transaction_type"
+                },
+                "description": {
+                  "$ref": "#/components/schemas/Transaction/properties/description"
+                },
+                "merchant_category_code": {
+                  "$ref": "#/components/schemas/Transaction/properties/merchant_category_code"
+                },
+                "merchant_address": {
+                  "$ref": "#/components/schemas/Transaction/properties/merchant_address"
+                },
+                "processor_mid": {
+                  "$ref": "#/components/schemas/Transaction/properties/processor_mid"
+                },
+                "processor_mid_type": {
+                  "$ref": "#/components/schemas/Transaction/properties/processor_mid_type"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "responses": {
+      "CardAccount": {
+        "description": "Card Account",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/CardAccount"
+            }
+          }
+        }
+      },
+      "CardAccounts": {
+        "description": "Card Accounts",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "card_accounts"
+              ],
+              "properties": {
+                "card_accounts": {
+                  "type": "array",
+                  "maxItems": 1000,
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "id",
+                      "external_id",
+                      "status"
+                    ],
+                    "properties": {
+                      "id": {
+                        "$ref": "#/components/schemas/CardAccount/properties/id"
+                      },
+                      "external_id": {
+                        "$ref": "#/components/schemas/CardAccount/properties/external_id"
+                      },
+                      "status": {
+                        "$ref": "#/components/schemas/CardAccount/properties/status"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "CardProgram": {
+        "description": "Card Program",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/CardProgram"
+            }
+          }
+        }
+      },
+      "CardPrograms": {
+        "description": "Card Programs",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "card_programs"
+              ],
+              "properties": {
+                "card_programs": {
+                  "type": "array",
+                  "maxItems": 1000,
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "id",
+                      "external_id",
+                      "name"
+                    ],
+                    "properties": {
+                      "id": {
+                        "$ref": "#/components/schemas/CardProgram/properties/id"
+                      },
+                      "external_id": {
+                        "$ref": "#/components/schemas/CardProgram/properties/external_id"
+                      },
+                      "name": {
+                        "$ref": "#/components/schemas/CardProgram/properties/name"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "DuplicateEntity": {
+        "description": "Duplicate Entity",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "detail"
+              ],
+              "properties": {
+                "detail": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "Healthcheck": {
+        "description": "Healthcheck",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Healthcheck"
+            }
+          }
+        }
+      },
+      "Merchant": {
+        "description": "Merchant",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Merchant"
+            }
+          }
+        }
+      },
+      "Merchants": {
+        "description": "Merchants",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "merchants"
+              ],
+              "properties": {
+                "card_accounts": {
+                  "type": "array",
+                  "maxItems": 1000,
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "id",
+                      "external_id",
+                      "assumed_name"
+                    ],
+                    "properties": {
+                      "id": {
+                        "$ref": "#/components/schemas/Merchant/properties/id"
+                      },
+                      "external_id": {
+                        "$ref": "#/components/schemas/Merchant/properties/external_id"
+                      },
+                      "assumed_name": {
+                        "$ref": "#/components/schemas/Merchant/properties/assumed_name"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "MerchantLocation": {
+        "description": "Merchant Location",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/MerchantLocation"
+            }
+          }
+        }
+      },
+      "MerchantLocations": {
+        "description": "Merchant Locations",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "merchant_locations"
+              ],
+              "properties": {
+                "card_accounts": {
+                  "type": "array",
+                  "maxItems": 1000,
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "id",
+                      "external_id"
+                    ],
+                    "properties": {
+                      "id": {
+                        "$ref": "#/components/schemas/Merchant/properties/id"
+                      },
+                      "external_id": {
+                        "$ref": "#/components/schemas/Merchant/properties/external_id"
+                      },
+                      "assumed_name": {
+                        "$ref": "#/components/schemas/Merchant/properties/assumed_name"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "Offer": {
+        "description": "Offer",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Offer"
+            }
+          }
+        }
+      },
+      "Offers": {
+        "description": "Offers",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "offers"
+              ],
+              "properties": {
+                "offers": {
+                  "type": "array",
+                  "maxItems": 1000,
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "id",
+                      "external_id",
+                      "type",
+                      "mode",
+                      "headline",
+                      "reward_type",
+                      "currency_code",
+                      "effective_date",
+                      "expiration_date"
+                    ],
+                    "properties": {
+                      "id": {
+                        "$ref": "#/components/schemas/Offer/properties/id"
+                      },
+                      "external_id": {
+                        "$ref": "#/components/schemas/Offer/properties/external_id"
+                      },
+                      "type": {
+                        "$ref": "#/components/schemas/Offer/properties/type"
+                      },
+                      "headline": {
+                        "$ref": "#/components/schemas/Offer/properties/headline"
+                      },
+                      "reward_type": {
+                        "$ref": "#/components/schemas/Offer/properties/reward_type"
+                      },
+                      "effective_date": {
+                        "$ref": "#/components/schemas/Offer/properties/effective_date"
+                      },
+                      "expiration_date": {
+                        "$ref": "#/components/schemas/Offer/properties/expiration_date"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "OfferSearchResults": {
+        "description": "Offers",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "offers"
+              ],
+              "properties": {
+                "offers": {
+                  "type": "array",
+                  "maxItems": 1000,
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "id",
+                      "score",
+                      "external_id",
+                      "type",
+                      "headline",
+                      "reward_type",
+                      "currency_code",
+                      "effective_date",
+                      "expiration_date",
+                      "activation_required",
+                      "is_activated",
+                      "mode"
+                    ],
+                    "properties": {
+                      "id": {
+                        "$ref": "#/components/schemas/Offer/properties/id"
+                      },
+                      "score": {
+                        "description": "The search score value",
+                        "type": "number"
+                      },
+                      "external_id": {
+                        "$ref": "#/components/schemas/Offer/properties/external_id"
+                      },
+                      "type": {
+                        "$ref": "#/components/schemas/Offer/properties/type"
+                      },
+                      "currency_code": {
+                        "$ref": "#/components/schemas/Offer/properties/currency_code"
+                      },
+                      "merchant_logo_url": {
+                        "$ref": "#/components/schemas/Merchant/properties/logo_url"
+                      },
+                      "merchant_id": {
+                        "$ref": "#/components/schemas/Offer/properties/merchant_id"
+                      },
+                      "headline": {
+                        "$ref": "#/components/schemas/Offer/properties/headline"
+                      },
+                      "category": {
+                        "$ref": "#/components/schemas/Offer/properties/category"
+                      },
+                      "category_tags": {
+                        "$ref": "#/components/schemas/Offer/properties/category_tags"
+                      },
+                      "reward_rate": {
+                        "$ref": "#/components/schemas/Offer/properties/reward_rate"
+                      },
+                      "reward_type": {
+                        "$ref": "#/components/schemas/Offer/properties/reward_type"
+                      },
+                      "reward_value": {
+                        "$ref": "#/components/schemas/Offer/properties/reward_value"
+                      },
+                      "effective_date": {
+                        "$ref": "#/components/schemas/Offer/properties/effective_date"
+                      },
+                      "expiration_date": {
+                        "$ref": "#/components/schemas/Offer/properties/expiration_date"
+                      },
+                      "minimum_spend": {
+                        "$ref": "#/components/schemas/Offer/properties/minimum_spend"
+                      },
+                      "maximum_reward_per_transaction": {
+                        "$ref": "#/components/schemas/Offer/properties/maximum_reward_per_transaction"
+                      },
+                      "max_redemptions": {
+                        "$ref": "#/components/schemas/Offer/properties/max_redemptions"
+                      },
+                      "mode": {
+                        "$ref": "#/components/schemas/Offer/properties/mode"
+                      },
+                      "activation_required": {
+                        "$ref": "#/components/schemas/Offer/properties/activation_required"
+                      },
+                      "is_activated": {
+                        "$ref": "#/components/schemas/Offer/properties/is_activated"
+                      },
+                      "nearest_location": {
+                        "$ref": "#/components/schemas/OfferLocationGeo"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "OfferActivation": {
+        "description": "Offer Activation",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/OfferActivation"
+            }
+          }
+        }
+      },
+      "OfferActivations": {
+        "description": "Offer Activations",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "offer_activations"
+              ],
+              "properties": {
+                "offer_activations": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/OfferActivation"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "OfferDetails": {
+        "description": "Offer Details",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "offer",
+                "links"
+              ],
+              "properties": {
+                "offer": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/OfferDetail"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "terms_and_conditions": {
+                          "$ref": "#/components/schemas/Offer/properties/terms_and_conditions"
+                        },
+                        "merchant_website": {
+                          "$ref": "#/components/schemas/Offer/properties/merchant_website"
+                        }
+                      }
+                    }
+                  ]
+                },
+                "merchant_locations": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "id",
+                      "is_online",
+                      "address"
+                    ],
+                    "properties": {
+                      "id": {
+                        "$ref": "#/components/schemas/MerchantLocation/properties/id"
+                      },
+                      "location_name": {
+                        "$ref": "#/components/schemas/MerchantLocation/properties/location_name"
+                      },
+                      "is_online": {
+                        "$ref": "#/components/schemas/MerchantLocation/properties/is_online"
+                      },
+                      "email": {
+                        "$ref": "#/components/schemas/MerchantLocation/properties/email"
+                      },
+                      "phone_number": {
+                        "$ref": "#/components/schemas/MerchantLocation/properties/phone_number"
+                      },
+                      "address": {
+                        "$ref": "#/components/schemas/MerchantLocation/properties/address"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "OfferDisplayRule": {
+        "description": "Offer Display Rule",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/OfferDisplayRule"
+            }
+          }
+        }
+      },
+      "OfferDisplayRules": {
+        "description": "Offer Display Rules",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "offer_display_rules"
+              ],
+              "properties": {
+                "offer_display_rules": {
+                  "type": "array",
+                  "maxItems": 50,
+                  "items": {
+                    "$ref": "#/components/schemas/OfferDisplayRule"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "Publisher": {
+        "description": "Publisher",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Publisher"
+            }
+          }
+        }
+      },
+      "Publishers": {
+        "description": "Publishers",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "publishers"
+              ],
+              "properties": {
+                "publishers": {
+                  "type": "array",
+                  "maxItems": 1000,
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "id",
+                      "external_id",
+                      "assumed_name"
+                    ],
+                    "properties": {
+                      "id": {
+                        "$ref": "#/components/schemas/Publisher/properties/id"
+                      },
+                      "external_id": {
+                        "$ref": "#/components/schemas/Publisher/properties/external_id"
+                      },
+                      "assumed_name": {
+                        "$ref": "#/components/schemas/Publisher/properties/assumed_name"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "RewardApproved": {
+        "description": "OK - Reward Approved",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "ok"
+              ],
+              "properties": {
+                "ok": {
+                  "description": "The Reward was approved successfully",
+                  "type": "boolean",
+                  "enum": [
+                    true
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "RewardDenied": {
+        "description": "OK - Reward Denied",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "ok"
+              ],
+              "properties": {
+                "ok": {
+                  "description": "the Reward was denied successfully",
+                  "type": "boolean",
+                  "enum": [
+                    true
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "Rewards": {
+        "description": "Rewards",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "rewards"
+              ],
+              "properties": {
+                "rewards": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "transaction_id",
+                      "offer_id",
+                      "transaction_date",
+                      "transaction_amount",
+                      "transaction_currency_code",
+                      "offer_title",
+                      "merchant_name",
+                      "status"
+                    ],
+                    "properties": {
+                      "transaction_id": {
+                        "$ref": "#/components/schemas/Transaction/properties/id"
+                      },
+                      "offer_id": {
+                        "$ref": "#/components/schemas/Transaction/properties/reward_details/items/properties/offer_id"
+                      },
+                      "offer_external_id": {
+                        "$ref": "#/components/schemas/Offer/properties/external_id"
+                      },
+                      "transaction_date": {
+                        "description": "The date on or timestamp at which the transaction\ntook place.\n(YYYY-mm-dd['T'HH:MM:ss[.SSS][Z|[+-]HH:MM]])\n",
+                        "type": "string",
+                        "format": "datetime",
+                        "example": "2022-05-31T15:34:22-0400"
+                      },
+                      "card_bin": {
+                        "$ref": "#/components/requestBodies/TransactionPost/content/application~1json/schema/properties/card_bin"
+                      },
+                      "card_last_4": {
+                        "$ref": "#/components/requestBodies/TransactionPost/content/application~1json/schema/properties/card_last_4"
+                      },
+                      "transaction_amount": {
+                        "$ref": "#/components/schemas/Transaction/properties/amount"
+                      },
+                      "transaction_currency_code": {
+                        "$ref": "#/components/schemas/Transaction/properties/currency_code"
+                      },
+                      "reward_amount": {
+                        "$ref": "#/components/schemas/Transaction/properties/reward_details/items/properties/amount"
+                      },
+                      "reward_currency_code": {
+                        "$ref": "#/components/schemas/Transaction/properties/reward_details/items/properties/currency_code"
+                      },
+                      "offer_headline": {
+                        "$ref": "#/components/schemas/Offer/properties/headline"
+                      },
+                      "merchant_name": {
+                        "$ref": "#/components/schemas/Merchant/properties/assumed_name"
+                      },
+                      "merchant_complete_address": {
+                        "$ref": "#/components/schemas/Address/properties/complete_address"
+                      },
+                      "status": {
+                        "$ref": "#/components/schemas/Transaction/properties/reward_details/items/properties/status"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "Transaction": {
+        "description": "Transaction",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Transaction"
+            }
+          }
+        }
+      },
+      "Transactions": {
+        "description": "Transactions",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": [
+                "transactions"
+              ],
+              "properties": {
+                "transactions": {
+                  "type": "array",
+                  "maxItems": 100,
+                  "items": {
+                    "type": "object",
+                    "required": [
+                      "id",
+                      "card_account_id",
+                      "external_id",
+                      "local_date",
+                      "debit",
+                      "amount",
+                      "currency_code",
+                      "description",
+                      "merchant_category_code",
+                      "matching_status"
+                    ],
+                    "properties": {
+                      "id": {
+                        "$ref": "#/components/schemas/Transaction/properties/id"
+                      },
+                      "card_account_id": {
+                        "$ref": "#/components/schemas/Transaction/properties/card_account_id"
+                      },
+                      "external_id": {
+                        "$ref": "#/components/schemas/Transaction/properties/external_id"
+                      },
+                      "local_date": {
+                        "$ref": "#/components/schemas/Transaction/properties/local_date"
+                      },
+                      "debit": {
+                        "$ref": "#/components/schemas/Transaction/properties/debit"
+                      },
+                      "amount": {
+                        "$ref": "#/components/schemas/Transaction/properties/amount"
+                      },
+                      "currency_code": {
+                        "$ref": "#/components/schemas/Transaction/properties/currency_code"
+                      },
+                      "description": {
+                        "$ref": "#/components/schemas/Transaction/properties/description"
+                      },
+                      "merchant_category_code": {
+                        "$ref": "#/components/schemas/Transaction/properties/merchant_category_code"
+                      },
+                      "matching_status": {
+                        "$ref": "#/components/schemas/Transaction/properties/matching_status"
+                      },
+                      "reward_details": {
+                        "$ref": "#/components/schemas/Transaction/properties/reward_details"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "triple_auth": {
+        "description": "The triple API uses OAuth2 with a client id and client secret.\n\nThe URL to get an OAuth2 token is here:\nhttps://auth.partners.dev.tripleupdev.com/oauth2/token\n\nThis is an example of how to call the API from the command line.\nCode will need to be developed by the partner in their servers.\n\n```bash\n# Fetch an access token\nTOKEN_URL=https://auth.partners.dev.tripleupdev.com/oauth2/token\nCLIENT_ID=fake\nCLIENT_SECRET=another-fake\n\nSCOPE=api.tripleup.com/partner.publishers\ncurl -X POST $TOKEN_URL \\\n  --user $CLIENT_ID:$CLIENT_SECRET \\\n  --data grant_type=client_credentials \\\n  --data-urlencode \"scope=$SCOPE\"\n\n# Use an access token\nACCESS_TOKEN=the-long-access-token-string-returned-above\nAPI_URL=https://api.partners.dev.tripleupdev.com/\ncurl -X GET \"$API_URL/v1/publishers\" \\\n  --header \"Authorization: Bearer $ACCESS_TOKEN\"\n```\n\nSee also the _Client credentials grant_ section at the bottom of this\n[AWS blog post](https://aws.amazon.com/blogs/mobile/understanding-amazon-cognito-user-pool-oauth-2-0-grants/).\n",
+        "type": "oauth2",
+        "flows": {
+          "clientCredentials": {
+            "tokenUrl": "https://auth.partners.dev.tripleupdev.com/oauth2/token",
+            "scopes": {
+              "api.tripleup.com/partner.portfolios": "Manage Portfolio Manager details and portfolios of Publishers\n",
+              "api.tripleup.com/partner.publishers": "Manage Publisher details, Card Programs, Consumers, Card Accounts,\nand Transactions\n",
+              "api.tripleup.com/partner.view_offers": "View recommended Offers, search Offers, and view Offer details\n",
+              "api.tripleup.com/partner.content_providers": "Manage Content Provider details, Merchants, Merchant Locations,\nand Offers\n"
+            }
+          }
+        }
+      }
+    }
+  },
+  "servers": [
+    {
+      "url": "https://api.partners.dev.tripleupdev.com",
+      "description": "Triple Dev"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Card Accounts",
+      "description": "Operations related to managing Card Accounts.\n\nA Card Account represents the account for which payment cards (credit or\ndebit cards) are issued. A Transaction will belong to a single Card\nAccount.\n\nIf a card is replaced or reissued (because it was lost or stolen), the\nCard Account itself should not change.\n\nCard Accounts may have a status of \"unenrolled\" or \"enrolled\" for Rewards.\nA Card Account may only receive a Reward if it has a status of \"enrolled\"\non the day of the eligible Transaction.\n"
+    },
+    {
+      "name": "Card Programs",
+      "description": "A **Card Program** is logical grouping of Card Accounts. Typically, this\nis a specific type of card offering by a Publisher - a debit or credit\ncard with its own rewards, such as miles or cash back.\n\nAlternatively, for Publishers that are not Banks or Card Issuers (for\nexample, a third-party rewards program), this is simply a way to organize\nCard Accounts.\n\nCard Accounts may not move between Card Programs and should not be\nrepresented in more than one Card Program.\n"
+    },
+    {
+      "name": "Data Export",
+      "description": "Operations for obtaining large data sets, such as all Offer content used\nby Publishers managing their own offer recommendations and transaction\nmatching.\n"
+    },
+    {
+      "name": "Offer Activation",
+      "description": "Operations related to Activating Offers for a Customer.\n\nSome Offers are not eligible for Rewards until a Customer activates the\nOffer. Some Offers may require re-activation after a specified number of\ndays.\n"
+    },
+    {
+      "name": "Offer Display",
+      "description": "Operations related to displaying Offers to Customers.\n\nOffer Display will generally follow the following flow:\n1. The Customer opens their mobile app or web page. A list of Recommended\n   Offers are displayed to the Customer.\n2. The Customer may search Offers.\n3. As Offers are displayed, \"Offer Viewed\" Events are reported to Triple.\n4. The Customer may tap or click to Activate an Offer, if required.\n5. The Customer may tap or click a thumbnail to View Offer Details.\n\nAffiliate Offers are online Offers that require redirecting the Customer\nto a custom URL. The URL is specific to that Customer and is generated\nby calling the \"Clicks\" endpoint, usually while viewing the Offer Details.\n\nOffer Display Rules can be configured to automatically exclude offers from\nthe result sets.\n"
+    },
+    {
+      "name": "Offer Display Rules",
+      "description": "**Alpha** - These endpoints are subject to breaking changes!\n\nOperations used to manage rules to exclude Offers from display.\n\nPortfolio Managers or Publishers may wish to exclude specific Merchant\nCategory Codes or Offers for specific Merchants.\n\nTo do this, Partners may create rules to exclude (or include) Offers based\non these criteria. Rules are scoped to either a Portfolio, Publisher, or\nCard Program. When applied, include rules at any level override all\nexclude rules. (An include rule does not guarantee an offer will appear in\nall result sets, only that it will not be removed.)\n\nFor example, if a Publisher defines an include rule for \"Bob's Hardware\"\nat the Publisher level and an exclude rule for hardware stores for its\n\"Awesome Rewards\" Card Program, the only Offers for hardware stores shown\nto Customers of that Card Program will be for \"Bob's Hardware\" (when\nrelevant).\n"
+    },
+    {
+      "name": "Offer Providers",
+      "description": "Operations related to creating and updating Offers, Merchants, and\nMerchant Locations.\n"
+    },
+    {
+      "name": "Portfolio Management",
+      "description": "Operations related to managing Portfolios of Publishers.\n\nPartners who manage Card Programs for multiple Publishers may wish to\norganize those Publishers into Portfolios. Portfolios allow Offer\nExclusions to be applied across multiple Publishers without having to add\neach Publisher to each Offer Exclusion.\n"
+    },
+    {
+      "name": "Rewards",
+      "description": "Operations for Content Providers to approve or deny Rewards.\n"
+    },
+    {
+      "name": "Transactions",
+      "description": "### Overview\nOperations related to reporting Transactions and checking related reward\neligibility and status.\n\nAll Transactions for Purchases and Returns must be uploaded for Card\nAccounts, and Transaction amounts should not include \"cash back\".\n\n### Reward Lifecycle\nA Transaction that matches an Offer will go through the following stages:\n- *Matching* - Triple determines whether the Transaction matches any\n  active Offers and potentially meets the Offer terms.\n- *Qualification* - The Merchant or Content Provider reviews matched\n  Transactions and approves or denies the Reward.\n- *Funding* - The Merchant or Content Provider transfers funds to pay for\n  approved Rewards.\n- *Distribution* - Triple sends Reward funds to the Publisher, which then\n  issues the appropriate Reward (cash back, points, miles, etc.) to the\n  cardholder. The Publisher then informs Triple that the cardholder has\n  received the Reward.\n\n### Automatic Creation of Card Accounts\nEach Transaction uploaded to Triple must be linked to a Card Account. If a\nCard Account does not exist, a best effort will be made to create one with\na \"NOT_ENROLLED\" status. For this to succeed, the Card Program must be\nresolvable based on the external ID(s) provided in the request.\n\n### Old Transactions\nTransactions *must be uploaded within 3 days* of the transaction date to\nbe eligible for a Reward. Historic Transactions may be uploaded to improve\nOffer Recommendations and targeting but are not eligible for Rewards.\n"
+    }
+  ],
+  "externalDocs": {
+    "description": "Find out more about Triple",
+    "url": "https://tripleup.com"
+  }
+}
