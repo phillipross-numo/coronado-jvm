@@ -1,5 +1,7 @@
 package io.github.coronado
 
+import io.github.coronado.entity.CardAccountStatus
+
 interface CardAccounts {
 
     // CreateCardAccount createCardAccount POST /partner/card-accounts
@@ -13,5 +15,3 @@ interface CardAccounts {
     fun listCardAccountsByCardAccountExternalId(cardAccountExternalId: String) // ListCardAccounts listCardAccounts GET /partner/card-accounts
     fun listCardAccountsByPublisherExternalId(publisherExternalId: String) // ListCardAccounts listCardAccounts GET /partner/card-accounts
 }
-
-enum class CardAccountStatus { ENROLLED, NOT_ENROLLED, CLOSED } // default ENROLLED

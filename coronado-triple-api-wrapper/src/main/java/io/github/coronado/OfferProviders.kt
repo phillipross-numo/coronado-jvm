@@ -1,5 +1,8 @@
 package io.github.coronado
 
+import io.github.coronado.entity.MarketingFeeType
+import io.github.coronado.entity.OfferCategory
+import io.github.coronado.entity.OfferType
 import java.math.BigDecimal
 
 interface OfferProviders {
@@ -52,23 +55,3 @@ interface OfferProviders {
     fun getOfferById(offerId: String) // GetOffer getOfferById GET    /partner/offers/{id}
     fun listOffers(offerExternalId: String?, merchantLocationExternalId: String?) // ListOffers listOffers  GET    /partner/offers
 }
-
-enum class MarketingFeeType { FIXED, PERCENTAGE }
-
-enum class OfferCategory {
-    AUTOMOTIVE,
-    CHILDREN_AND_FAMILY,
-    ELECTRONICS,
-    ENTERTAINMENT,
-    FINANCIAL_SERVICES,
-    FOOD,
-    HEALTH_AND_BEAUTY,
-    HOME,
-    OFFICE_AND_BUSINESS,
-    RETAIL,
-    TRAVEL,
-    UTILITIES_AND_TELECOM
-}
-
-enum class OfferType { CARD_LINKED, AFFILIATE, CATEGORICAL }
-enum class RewardType { FIXED, PERCENTAGE }

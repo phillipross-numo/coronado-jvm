@@ -1,5 +1,6 @@
 package io.github.coronado
 
+import io.github.coronado.entity.ProcessorMIDType
 import java.math.BigDecimal
 
 interface Transactions {
@@ -33,21 +34,4 @@ interface Transactions {
         endDate: String?,
         matched: Boolean?
     ) // GetTransactionList listTransactions GET /partner/transactions
-}
-
-enum class TransactionType { CHECK, DEPOSIT, FEE, PAYMENT, PURCHASE, REFUND, TRANSFER, WITHDRAWAL }
-
-enum class ProcessorMIDType {
-    AMEX_SE_NUMBER,
-    DISCOVER_MID,
-    MC_AUTH_LOC_ID,
-    MC_AUTH_ACQ_ID,
-    MC_AUTH_ICA,
-    MC_CLEARING_LOC_ID,
-    MC_CLEARING_ACQ_ID,
-    MC_CLEARING_ICA,
-    MERCHANT_PROCESSOR,
-    NCR,
-    VISA_VMID,
-    VISA_VSID
 }
