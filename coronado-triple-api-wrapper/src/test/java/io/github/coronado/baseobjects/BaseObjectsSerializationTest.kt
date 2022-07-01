@@ -7,6 +7,7 @@ import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZonedDateTime
+import java.util.Currency
 import java.util.UUID
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -21,6 +22,7 @@ class BaseObjectsSerializationTest {
     fun initSerializer() {
         serializer = Moshi.Builder()
             .add(BigDecimalAdapter)
+            .add(CurrencyAdapter)
             .add(LocalDateAdapter)
             .add(LocalTimeAdapter)
             .add(ZonedDateTimeAdapter)
@@ -29,12 +31,23 @@ class BaseObjectsSerializationTest {
     }
 
     @Test
+    fun testCurrency() {
+        println("testing currency")
+        val currencyStringValue = "USD"
+        println("currencyStringValue: $currencyStringValue")
+        val currency = Currency.getInstance(currencyStringValue)
+        println("currency: $currency")
+        val currencyDisplayName = currency.displayName
+        println("currency display name: $currencyDisplayName")
+    }
+
+    @Test
     fun testTransactionSerialization() {
         val transaction = Transaction(
             UUID.randomUUID().toString(), UUID.randomUUID().toString(), UUID.randomUUID().toString(),
             LocalDate.now(), LocalTime.now(),
             true,
-            BigDecimal("12.00"), "USD", "PURCHASE", "Pittsburgh Zoo",
+            BigDecimal("12.00"), "USD", TransactionType.PURCHASE, "Pittsburgh Zoo",
             MerchantCategoryCode("7998", "Aquariums, Dolphinariums, Seaquariums, and Zoos"),
             Address(
                 "7370 BAKER ST STE 100\\nPITTSBURGH, PA 15206",
@@ -42,7 +55,7 @@ class BaseObjectsSerializationTest {
                 "PITTSBURGH", "PA", "15206", "US",
                 BigDecimal(40.440624), BigDecimal(-79.995888)
             ),
-            "9000012345", "VISA_VMID", "HISTORIC_TRANSACTION",
+            "9000012345", ProcessorMIDType.VISA_VMID, "HISTORIC_TRANSACTION",
             listOf(
                 RewardDetail(
                     UUID.randomUUID().toString(),
@@ -69,7 +82,7 @@ class BaseObjectsSerializationTest {
             UUID.randomUUID().toString(), UUID.randomUUID().toString(), UUID.randomUUID().toString(),
             ZonedDateTime.now(),
             "444789", "9876",
-            BigDecimal("12.00"), "USD",
+            BigDecimal("12.00"), Currency.getInstance("USD"),
             BigDecimal("0.00"), "USD",
             "some offer headline", "some merchant",
             "7370 BAKER ST STE 100\\nPITTSBURGH, PA 15206",
@@ -134,7 +147,7 @@ class BaseObjectsSerializationTest {
             UUID.randomUUID().toString(),
             true,
             0,
-            "USD",
+            Currency.getInstance("USD"),
             "AUTOMOTIVE",
             "ACategoryTag",
             setOf("categoryMCC1", "categoryMCC2", "categoryMCC3"),
@@ -224,7 +237,7 @@ class BaseObjectsSerializationTest {
             UUID.randomUUID().toString(),
             UUID.randomUUID().toString(),
             "Great Card Program",
-            "someCurrency",
+            Currency.getInstance("USD"),
             setOf("bin1", "bin2"),
             ZonedDateTime.now(),
             ZonedDateTime.now()
@@ -257,8 +270,8 @@ class BaseObjectsSerializationTest {
         val cardAccountIdentifier = CardAccountIdentifier(
             UUID.randomUUID().toString(),
             cardAccount.cardProgramId,
-            cardAccount.externalId,
-            cardAccount.status.toString()
+            cardAccount.cardAccountExternalId,
+            cardAccount.status
         )
         val cardAccountIdentifierJsonAdapter = serializer.adapter<CardAccountIdentifier>().indent("  ")
         val cardAccountIdentifierJson = cardAccountIdentifierJsonAdapter.toJson(cardAccountIdentifier)
@@ -266,6 +279,18 @@ class BaseObjectsSerializationTest {
         val roundTripCardAccountIdentifier = cardAccountIdentifierJsonAdapter.fromJson(cardAccountIdentifierJson)
         assertEquals(cardAccountIdentifier, roundTripCardAccountIdentifier)
         println(roundTripCardAccountIdentifier)
+
+        val cardAccountIdentifierJson2 = """
+            {
+              "publisherExternalId": "7d5e8d0b-6820-4c6e-a1ea-92a58caa3911",
+              "cardProgramExternalId": "e31396cd-f0f1-4fac-999c-845afa2e27a0",
+              "externalId": "4a72a7e2-7957-4813-80d7-b2ac0c8a27be",
+              "status": "ENROLLED"
+            }
+        """.trimIndent()
+        println("cardAccountIdentifierJson2:\n$cardAccountIdentifierJson2\n")
+        val cardAccountIdentifier2 = cardAccountIdentifierJsonAdapter.fromJson(cardAccountIdentifierJson2)
+        println("cardAccountIdentifier2:\n$cardAccountIdentifierJson2\n")
     }
 
     @Test

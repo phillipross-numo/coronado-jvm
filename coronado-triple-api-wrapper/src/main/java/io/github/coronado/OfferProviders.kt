@@ -1,6 +1,8 @@
 package io.github.coronado
 
+import io.github.coronado.entity.Address
 import io.github.coronado.entity.MarketingFeeType
+import io.github.coronado.entity.MerchantCategoryCode
 import io.github.coronado.entity.OfferCategory
 import io.github.coronado.entity.OfferType
 import java.math.BigDecimal

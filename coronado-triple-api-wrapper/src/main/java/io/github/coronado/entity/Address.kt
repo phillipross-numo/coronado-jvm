@@ -1,4 +1,4 @@
-package io.github.coronado
+package io.github.coronado.entity
 
 import java.math.BigDecimal
 

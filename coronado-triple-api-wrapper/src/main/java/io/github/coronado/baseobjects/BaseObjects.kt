@@ -1,9 +1,11 @@
 package io.github.coronado.baseobjects
 
+import com.squareup.moshi.Json
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZonedDateTime
+import java.util.Currency
 
 // define objects with fields, camelcase the properties, assign datatypes, assign nullability
 
@@ -22,7 +24,7 @@ data class Address(
 data class CardAccount(
     val id: String,
     val cardProgramId: String,
-    val externalId: String,
+    @Json(name = "externalId") val cardAccountExternalId: String,
     val status: CardAccountStatus,
     val createdAt: ZonedDateTime,
     val updatedAt: ZonedDateTime
@@ -33,8 +35,8 @@ enum class CardAccountStatus { ENROLLED, NOT_ENROLLED, CLOSED }
 data class CardAccountIdentifier(
     val publisherExternalId: String,
     val cardProgramExternalId: String,
-    val externalId: String, // rename to card account external id?
-    val status: String // define enum with possible values?  "ENROLLED"
+    @Json(name = "externalId") val cardAccountExternalId: String,
+    val status: CardAccountStatus
 )
 
 data class CardProgram(
@@ -42,7 +44,7 @@ data class CardProgram(
     val publisherId: String,
     val externalId: String,
     val name: String,
-    val programCurrency: String, // there's dedicated type for this?
+    val programCurrency: Currency,
     val cardBins: Set<String>,
     val createdAt: ZonedDateTime,
     val updatedAt: ZonedDateTime
@@ -57,7 +59,7 @@ data class MerchantLocation(
     val id: String,
     val locationName: String,
     val online: Boolean,
-    val email: String, // rename to emailAddress ?
+    @Json(name = "email") val emailAddress: String,
     val phoneNumber: String,
     val address: Address
 )
@@ -66,7 +68,7 @@ data class Offer(
     val id: String,
     val activationRequired: Boolean, // is this really true/false ?
     val activationDurationInDays: Int, // is this integer or decimal ?
-    val currencyCode: String, // there's dedicated type for this
+    val currencyCode: Currency,
     val category: String, // define this as an enum?  sample value: "AUTOMOTIVE"
     val categoryTags: String, // should this be a collection ?
     val categoryMccs: Set<String>, // should this be a collection of an embedded object type?
@@ -121,7 +123,7 @@ data class DisplayRuleScope(
 data class Publisher(
     val id: String,
     val portfolioManagerId: String,
-    val externalId: String,
+    @Json(name = "externalId") val publisherExternalId: String,
     val assumedName: String,
     val address: Address,
     val revenueShare: BigDecimal,
@@ -137,7 +139,7 @@ data class Reward(
     val cardBin: String,
     val cardLast4: String,
     val transactionAmount: BigDecimal,
-    val transactionCurrencyCode: String, //  there's dedicated type for this?
+    val transactionCurrencyCode: Currency,
     val rewardAmount: BigDecimal,
     val rewardCurrencyCode: String, //  there's dedicated type for this?
     val offerHeadline: String,
@@ -158,20 +160,27 @@ data class RewardDetail(
 data class Transaction(
     val id: String,
     val cardAccountId: String,
-    val externalId: String,
+    @Json(name = "externalId") val transactionExternalId: String,
     val localDate: LocalDate,
     val localTime: LocalTime,
     val debit: Boolean,
     val amount: BigDecimal,
     val currencyCode: String,
-    val transactionType: String, // some enum?  ex:"PURCHASE"
+    val transactionType: TransactionType,
     val description: String,
     val merchantCategoryCode: MerchantCategoryCode,
     val merchantAddress: Address,
     val processorMid: String,
-    val processorMidType: String, // should be an enum?    // ex:"VISA_VMID"
+    val processorMidType: ProcessorMIDType,
     val matchingStatus: String, // should be an enum?    // ex:"HISTORIC_TRANSACTION"
     val rewardDetails: List<RewardDetail>,
     val createdAt: ZonedDateTime,
     val updatedAt: ZonedDateTime
 )
+
+enum class TransactionType { CHECK, DEPOSIT, FEE, PAYMENT, PURCHASE, REFUND, TRANSFER, WITHDRAWAL }
+
+enum class ProcessorMIDType {
+    AMEX_SE_NUMBER, DISCOVER_MID, MC_AUTH_LOC_ID, MC_AUTH_ACQ_ID, MC_AUTH_ICA, MC_CLEARING_LOC_ID, MC_CLEARING_ACQ_ID,
+    MC_CLEARING_ICA, MERCHANT_PROCESSOR, NCR, VISA_VMID, VISA_VSID
+}

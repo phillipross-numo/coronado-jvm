@@ -1,5 +1,6 @@
 package io.github.coronado
 
+import io.github.coronado.entity.Address
 import java.math.BigDecimal
 
 interface PortfolioManagement {

@@ -6,6 +6,7 @@ import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZonedDateTime
+import java.util.Currency
 
 object BigDecimalAdapter {
     @FromJson
@@ -13,6 +14,14 @@ object BigDecimalAdapter {
 
     @ToJson
     fun toJson(value: BigDecimal) = value.toString()
+}
+
+object CurrencyAdapter {
+    @FromJson
+    fun fromJson(string: String) = Currency.getInstance(string)
+
+    @ToJson
+    fun toJson(value: Currency) = value.toString()
 }
 
 object ZonedDateTimeAdapter {
