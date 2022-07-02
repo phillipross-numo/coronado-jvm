@@ -11,7 +11,11 @@ interface CardAccounts {
 
     fun updateCardAccountById(status: CardAccountStatus) // UpdateCardAccount updateCardAccountById PATCH  /partner/card-accounts/{id}
     fun getCardAccountById(id: String) // GetCardAccount getCardAccountById GET /partner/card-accounts/{id}
-    fun listCardAccountsByCardProgramExternalId(cardProgramExternalId: String) // ListCardAccounts listCardAccounts GET /partner/card-accounts
-    fun listCardAccountsByCardAccountExternalId(cardAccountExternalId: String) // ListCardAccounts listCardAccounts GET /partner/card-accounts
-    fun listCardAccountsByPublisherExternalId(publisherExternalId: String) // ListCardAccounts listCardAccounts GET /partner/card-accounts
+
+    // ListCardAccounts listCardAccounts GET /partner/card-accounts
+    fun listCardAccounts(
+        publisherExternalId: String,
+        cardProgramExternalId: String
+    ): List<String> // list of card accounts
+    data class CardAccountResponse(val id: String, val externalId: String, val status: String)
 }

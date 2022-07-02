@@ -55,5 +55,5 @@ interface OfferProviders {
         excludedDates: String?
     ) // UpdateOffer updateOffer PATCH  /partner/offers/{id}
     fun getOfferById(offerId: String) // GetOffer getOfferById GET    /partner/offers/{id}
-    fun listOffers(offerExternalId: String?, merchantLocationExternalId: String?) // ListOffers listOffers  GET    /partner/offers
+    fun listOffers(offerExternalId: String?, merchantExternalId: String?) // ListOffers listOffers  GET    /partner/offers
 }
