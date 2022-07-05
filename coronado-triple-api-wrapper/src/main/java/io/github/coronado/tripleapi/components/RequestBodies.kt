@@ -1,0 +1,96 @@
+package io.github.coronado.tripleapi.components
+
+import io.github.coronado.tripleapi.components.schemas.Address
+import io.github.coronado.tripleapi.components.schemas.CardAccountIdentifier
+import io.github.coronado.tripleapi.components.schemas.CardBIN
+import io.github.coronado.tripleapi.components.schemas.CurrencyCode
+import io.github.coronado.tripleapi.components.schemas.EntityId
+import io.github.coronado.tripleapi.components.schemas.ExternalId
+import io.github.coronado.tripleapi.components.schemas.GeoTarget
+import io.github.coronado.tripleapi.components.schemas.MerchantCategoryCode
+import io.github.coronado.tripleapi.components.schemas.OfferDisplayRuleAction
+import io.github.coronado.tripleapi.components.schemas.OfferDisplayRuleScopeLevel
+import io.github.coronado.tripleapi.components.schemas.OfferDisplayRuleType
+import io.github.coronado.tripleapi.components.schemas.OfferSearchFilter
+import io.github.coronado.tripleapi.components.schemas.ProcessorMID
+import io.github.coronado.tripleapi.components.schemas.ProcessorMIDType
+import io.github.coronado.tripleapi.components.schemas.TransactionType
+import java.math.BigDecimal
+import java.time.LocalDate
+import java.time.LocalTime
+
+/**
+ * A Kotlin implementation for the request body components established by Triple API Swagger v1.1 (as of 2022-06-27)
+ */
+
+class CardAccountPatchRequestBody
+class CardAccountPostRequestBody
+class CardProgramPatchRequestBody
+class CardProgramPostRequestBody
+class MerchantPatchRequestBody
+class MerchantPostRequestBody
+class MerchantLocationPatchRequestBody
+class MerchantLocationPostRequestBody
+class OfferPatchRequestBody
+class OfferPostRequestBody
+class OfferActivationPostRequestBody
+class OfferDisplayRulePatchRequestBody
+
+data class OfferDisplayRulePostRequestBody(
+    val description: String?,
+    val enabled: Boolean? = true,
+    val scope: OfferDisplayRulePostRequestBodyScope,
+    val type: OfferDisplayRuleType,
+    val value: BigDecimal,
+    val action: OfferDisplayRuleAction
+)
+data class OfferDisplayRulePostRequestBodyScope(
+    val level: OfferDisplayRuleScopeLevel,
+    val id: EntityId
+)
+
+data class OfferDetailsGetOrPostRequestBody(
+    val proximityTarget: GeoTarget,
+    val cardAccountIdentifier: CardAccountIdentifier,
+    val merchantLocationId: EntityId?
+)
+
+data class OfferSearchGetOrPostRequestBody(
+    val proximityTarget: GeoTarget,
+    val cardAccountIdentifier: CardAccountIdentifier,
+    val textQuery: String?,
+    val pageSize: Int?,
+    val pageOffset: Int?,
+    val applyFilter: OfferSearchFilter?
+)
+
+abstract class PublisherPatchRequestBody()
+data class AssumedNamePublisherPatchRequestBody(val assumedName: String) : PublisherPatchRequestBody()
+data class AddressNamePublisherPatchRequestBody(val address: Address) : PublisherPatchRequestBody()
+
+data class PublisherPostRequestBody(
+    val externalId: ExternalId,
+    val assumedName: String,
+    val address: Address,
+    val revenueShare: BigDecimal?
+)
+
+data class TransactionPostRequestBody(
+    val publisherExternalId: ExternalId?,
+    val cardProgramExternalId: ExternalId,
+    val cardAccountExternalId: ExternalId,
+    val externalId: ExternalId,
+    val cardBIN: CardBIN?,
+    val cardLast4: String?,
+    val localDate: LocalDate,
+    val localTime: LocalTime?,
+    val debit: Boolean,
+    val amount: BigDecimal,
+    val currencyCode: CurrencyCode?,
+    val transactionType: TransactionType,
+    val description: String,
+    val merchantCategoryCode: MerchantCategoryCode,
+    val merchantAddress: Address,
+    val processorMID: ProcessorMID,
+    val processorMIDType: ProcessorMIDType
+)
