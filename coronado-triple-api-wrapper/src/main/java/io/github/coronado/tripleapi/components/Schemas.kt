@@ -1,6 +1,9 @@
 package io.github.coronado.tripleapi.components.schemas
 
 import com.squareup.moshi.Json
+import io.github.coronado.api.Address
+import io.github.coronado.api.Latitude
+import io.github.coronado.api.Longitude
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -23,20 +26,6 @@ data class AffiliateSuccess(
 )
 data class AffiliateFailure(
     val message: String // A description of the failure, ex: "merchant_id AcmeWidgets does not exist."
-)
-
-// A physical address in the world.
-// Addresses may be normalized by Triple for countries with known, standardized formatting rules.
-data class Address(
-    @Json(name = "complete_address") val completeAddress: String, // The complete address, as would be written out for mail delivery or route navigation. ex: "7370 BAKER ST STE 100\nPITTSBURGH, PA 15206"
-    @Json(name = "line_1") val line1: String?, // ex: "7370 BAKER ST STE 100"
-    @Json(name = "line_2") val line2: String?,
-    val locality: String?, // City or locality name, ex: "PITTSBURGH"
-    val province: String, // State abbreviation or province name, ex: "PA"
-    @Json(name = "postal_code") val postalCode: String?, // ZIP Code™, ZIP+4, or postal code, ex: "15206"
-    @Json(name = "country_code") val countryCode: String?, // 2-letter ISO-3166 country code, ex: "US"
-    val latitude: Latitude,
-    val longitude: Longitude
 )
 
 data class CardAccount(
@@ -104,9 +93,6 @@ typealias EntityId = String
 // To protect against accidental inclusion of sensitive personal information, external IDs may not be 9-digit numbers
 // or use the US Tax ID format (###-##-####).
 typealias ExternalId = String
-
-typealias Latitude = BigDecimal
-typealias Longitude = BigDecimal
 
 // Cardholder location information used for OfferDisplay
 abstract class GeoTarget() { abstract val radius: Radius? }

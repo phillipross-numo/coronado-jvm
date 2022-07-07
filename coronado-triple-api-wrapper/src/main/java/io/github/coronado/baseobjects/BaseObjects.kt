@@ -1,6 +1,7 @@
 package io.github.coronado.baseobjects
 
 import com.squareup.moshi.Json
+import io.github.coronado.api.Address
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalTime
@@ -8,18 +9,6 @@ import java.time.ZonedDateTime
 import java.util.Currency
 
 // define objects with fields, camelcase the properties, assign datatypes, assign nullability
-
-data class Address(
-    val completeAddress: String,
-    val line1: String,
-    val line2: String?,
-    val locality: String,
-    val province: String,
-    val postalCode: String,
-    val countryCode: String,
-    val latitude: BigDecimal,
-    val longitude: BigDecimal
-)
 
 data class CardAccount(
     val id: String,

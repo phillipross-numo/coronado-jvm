@@ -1,6 +1,6 @@
 package io.github.coronado
 
-import io.github.coronado.entity.Address
+import io.github.coronado.api.Address
 import io.github.coronado.entity.Publisher
 import java.math.BigDecimal
 import java.util.UUID

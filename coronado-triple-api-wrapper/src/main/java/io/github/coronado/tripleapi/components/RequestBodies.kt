@@ -1,7 +1,7 @@
 package io.github.coronado.tripleapi.components
 
 import com.squareup.moshi.Json
-import io.github.coronado.tripleapi.components.schemas.Address
+import io.github.coronado.api.Address
 import io.github.coronado.tripleapi.components.schemas.CardAccountIdentifier
 import io.github.coronado.tripleapi.components.schemas.CardBIN
 import io.github.coronado.tripleapi.components.schemas.CurrencyCode

@@ -8,9 +8,6 @@ import io.github.coronado.tripleapi.components.PublisherPatchAssumedNameRequestB
 import io.github.coronado.tripleapi.components.PublisherPostRequestBody
 import io.github.coronado.tripleapi.components.PublisherResponse
 import io.github.coronado.tripleapi.components.PublishersResponse
-import io.github.coronado.tripleapi.components.schemas.Address
-import io.github.coronado.tripleapi.components.schemas.Latitude
-import io.github.coronado.tripleapi.components.schemas.Longitude
 import java.math.BigDecimal
 import java.net.URI
 import java.net.http.HttpRequest

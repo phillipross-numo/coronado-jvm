@@ -3,6 +3,7 @@ package io.github.coronado.baseobjects
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.adapter
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
+import io.github.coronado.api.Address
 import io.github.coronado.api.BigDecimalAdapter
 import io.github.coronado.api.CurrencyAdapter
 import io.github.coronado.api.LocalDateAdapter
