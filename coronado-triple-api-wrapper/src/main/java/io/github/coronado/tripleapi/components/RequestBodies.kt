@@ -1,5 +1,6 @@
 package io.github.coronado.tripleapi.components
 
+import com.squareup.moshi.Json
 import io.github.coronado.tripleapi.components.schemas.Address
 import io.github.coronado.tripleapi.components.schemas.CardAccountIdentifier
 import io.github.coronado.tripleapi.components.schemas.CardBIN
@@ -65,14 +66,14 @@ data class OfferSearchGetOrPostRequestBody(
 )
 
 abstract class PublisherPatchRequestBody()
-data class AssumedNamePublisherPatchRequestBody(val assumedName: String) : PublisherPatchRequestBody()
-data class AddressNamePublisherPatchRequestBody(val address: Address) : PublisherPatchRequestBody()
+data class PublisherPatchAssumedNameRequestBody(@Json(name = "assumed_name") val assumedName: String) : PublisherPatchRequestBody()
+data class PublisherPatchAddressRequestBody(val address: Address) : PublisherPatchRequestBody()
 
 data class PublisherPostRequestBody(
-    val externalId: ExternalId,
-    val assumedName: String,
+    @Json(name = "external_id") val externalId: ExternalId,
+    @Json(name = "assumed_name") val assumedName: String,
     val address: Address,
-    val revenueShare: BigDecimal?
+    @Json(name = "revenue_share") val revenueShare: BigDecimal?
 )
 
 data class TransactionPostRequestBody(

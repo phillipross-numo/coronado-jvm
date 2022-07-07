@@ -1,7 +1,9 @@
 package io.github.coronado.tripleapi.components.schemas
 
+import com.squareup.moshi.Json
 import java.math.BigDecimal
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.ZonedDateTime
 import java.util.Currency
@@ -26,13 +28,13 @@ data class AffiliateFailure(
 // A physical address in the world.
 // Addresses may be normalized by Triple for countries with known, standardized formatting rules.
 data class Address(
-    val completeAddress: String, // The complete address, as would be written out for mail delivery or route navigation. ex: "7370 BAKER ST STE 100\nPITTSBURGH, PA 15206"
-    val line1: String?, // ex: "7370 BAKER ST STE 100"
-    val line2: String?,
+    @Json(name = "complete_address") val completeAddress: String, // The complete address, as would be written out for mail delivery or route navigation. ex: "7370 BAKER ST STE 100\nPITTSBURGH, PA 15206"
+    @Json(name = "line_1") val line1: String?, // ex: "7370 BAKER ST STE 100"
+    @Json(name = "line_2") val line2: String?,
     val locality: String?, // City or locality name, ex: "PITTSBURGH"
     val province: String, // State abbreviation or province name, ex: "PA"
-    val postalCode: String?, // ZIP Code™, ZIP+4, or postal code, ex: "15206"
-    val countryCode: String?, // 2-letter ISO-3166 country code, ex: "US"
+    @Json(name = "postal_code") val postalCode: String?, // ZIP Code™, ZIP+4, or postal code, ex: "15206"
+    @Json(name = "country_code") val countryCode: String?, // 2-letter ISO-3166 country code, ex: "US"
     val latitude: Latitude,
     val longitude: Longitude
 )
@@ -88,7 +90,7 @@ typealias TransactionId = String
 typealias CardBIN = String
 
 // RFC 3339 date time when this entity was created
-typealias CreatedAt = ZonedDateTime
+typealias CreatedAt = LocalDateTime
 
 // 3-character ISO-4217 currency code. Note that some values are not supported, particularly test and fund codes.
 typealias CurrencyCode = Currency
@@ -306,13 +308,13 @@ data class ProcessorMID(val mid: ProcessorMIDValue, val type: ProcessorMIDType?)
 
 data class Publisher(
     val id: EntityId,
-    val portfolioManagerId: EntityId,
-    val externalIid: ExternalId,
-    val assumedName: String, // Assumed legal name of the Publisher
+    @Json(name = "portfolio_manager_id") val portfolioManagerId: EntityId,
+    @Json(name = "external_id") val externalId: ExternalId,
+    @Json(name = "assumed_name") val assumedName: String, // Assumed legal name of the Publisher
     val address: Address,
-    val revenueShare: BigDecimal, // The percent-based revenue share of this Publisher. Only Portfolio Managers may set this value for their Publishers. If set, this will override the value set at the Portfolio Manager level, ex: 1.125
-    val createdAt: CreatedAt,
-    val updatedAt: UpdatedAt
+    @Json(name = "revenue_share") val revenueShare: BigDecimal, // The percent-based revenue share of this Publisher. Only Portfolio Managers may set this value for their Publishers. If set, this will override the value set at the Portfolio Manager level, ex: 1.125
+    @Json(name = "created_at") val createdAt: CreatedAt,
+    @Json(name = "updated_at") val updatedAt: UpdatedAt
 )
 
 // The distance in meters from the provided location. Default value of `35000m` is adjusted according to population
@@ -395,7 +397,7 @@ enum class TransactionRewardDetailsItemRejectionReason {
 enum class TransactionType { CHECK, DEPOSIT, FEE, PAYMENT, PURCHASE, REFUND, TRANSFER, WITHDRAWAL }
 
 // "RFC 3339 date time when this entity was most recently updated"
-typealias UpdatedAt = ZonedDateTime
+typealias UpdatedAt = LocalDateTime
 
 data class SuccessBody(
     val success: Boolean?, // Was this request successful?

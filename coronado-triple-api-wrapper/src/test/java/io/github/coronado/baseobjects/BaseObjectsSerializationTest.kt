@@ -3,6 +3,12 @@ package io.github.coronado.baseobjects
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.adapter
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
+import io.github.coronado.api.BigDecimalAdapter
+import io.github.coronado.api.CurrencyAdapter
+import io.github.coronado.api.LocalDateAdapter
+import io.github.coronado.api.LocalDateTimeAdapter
+import io.github.coronado.api.LocalTimeAdapter
+import io.github.coronado.api.ZonedDateTimeAdapter
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalTime
@@ -24,6 +30,7 @@ class BaseObjectsSerializationTest {
             .add(BigDecimalAdapter)
             .add(CurrencyAdapter)
             .add(LocalDateAdapter)
+            .add(LocalDateTimeAdapter)
             .add(LocalTimeAdapter)
             .add(ZonedDateTimeAdapter)
             .addLast(KotlinJsonAdapterFactory())

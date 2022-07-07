@@ -1,9 +1,10 @@
-package io.github.coronado.baseobjects
+package io.github.coronado.api
 
 import com.squareup.moshi.FromJson
 import com.squareup.moshi.ToJson
 import java.math.BigDecimal
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.ZonedDateTime
 import java.util.Currency
@@ -30,6 +31,14 @@ object ZonedDateTimeAdapter {
 
     @ToJson
     fun toJson(value: ZonedDateTime) = value.toString()
+}
+
+object LocalDateTimeAdapter {
+    @FromJson
+    fun fromJson(string: String) = LocalDateTime.parse(string)
+
+    @ToJson
+    fun toJson(value: LocalDateTime) = value.toString()
 }
 
 object LocalDateAdapter {

@@ -94,6 +94,7 @@
                         <configuration>
                             <excludes>
                                 <exclude>io.github.coronado.api.ClientIT</exclude>
+                                <exclude>io.github.coronado.api.PublisherIT</exclude>
                             </excludes>
                         </configuration>
                     </execution>
@@ -155,7 +156,8 @@
                                 </goals>
                                 <configuration>
                                     <includes>
-                                        <include>ClientIT</include>
+                                        <include>io.github.coronado.api.ClientTest</include>
+                                        <include>io.github.coronado.api.PublisherIT</include>
                                     </includes>
                                 </configuration>
                             </execution>
