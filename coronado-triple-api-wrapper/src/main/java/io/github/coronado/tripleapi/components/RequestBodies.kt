@@ -2,6 +2,7 @@ package io.github.coronado.tripleapi.components
 
 import com.squareup.moshi.Json
 import io.github.coronado.api.Address
+import io.github.coronado.api.CardAccountStatus
 import io.github.coronado.tripleapi.components.schemas.CardAccountIdentifier
 import io.github.coronado.tripleapi.components.schemas.CardBIN
 import io.github.coronado.tripleapi.components.schemas.CurrencyCode
@@ -25,7 +26,12 @@ import java.time.LocalTime
  */
 
 class CardAccountPatchRequestBody
-class CardAccountPostRequestBody
+data class CardAccountPostRequestBody(
+    @Json(name = "card_program_external_id") val cardProgramExternalId: ExternalId,
+    @Json(name = "external_id") val cardAccountExternalId: ExternalId,
+    @Json(name = "publisher_external_id") val publisherExternalId: ExternalId?,
+    val status: CardAccountStatus?
+)
 class CardProgramPatchRequestBody
 
 data class CardProgramPostRequestBody(

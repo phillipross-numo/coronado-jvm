@@ -5,13 +5,14 @@ import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 
-public class JavaPublisherMgrIT {
+public class JavaCardAccountMgrIT {
 
     @Test
-    void testPublishersBasicCRUD() {
+    void testCardProgramBasicCRUD() {
         String cfgNameTripleApiServiceDomain = "TRIPLE_API_SERVICE_DOMAIN";
         String cfgNameTripleApiClientId = "TRIPLE_API_CLIENT_ID";
         String cfgNameTripleApiClientSecret = "TRIPLE_API_CLIENT_SECRET";
@@ -26,9 +27,11 @@ public class JavaPublisherMgrIT {
                 .scope(Client.OAuth2Scope.PARTNER_PUBLISHERS)
                 .build();
         PublisherMgr publisherMgr = new PublisherMgr(partnerPublishersClient);
+        CardProgramMgr cardProgramMgr = new CardProgramMgr(partnerPublishersClient);
+        CardAccountMgr cardAccountMgr = new CardAccountMgr(partnerPublishersClient);
 
         Publisher newPublisher = publisherMgr.create(
-                "0_812_" + System.currentTimeMillis(),
+                "0_812_" + System.currentTimeMillis(), // (OU812 didn't work :( )
                 "BenevolentFI, Ltd_" + System.currentTimeMillis(),
                 new Address(
                         "123 Sesame Street, 2nd Floor, New York, NY 10003, US",
@@ -43,16 +46,33 @@ public class JavaPublisherMgrIT {
                 ),
                 new BigDecimal("0.21")
         );
-        AssertionsKt.assertTrue(publisherMgr.list().stream()
-                .map(PublisherReference::getId)
-                .anyMatch(v -> v.equals(newPublisher.getId())), "created publisher should be in list");
-        Publisher publisher = publisherMgr.byId(newPublisher.getId());
-        AssertionsKt.assertEquals(publisher, newPublisher, "new publisher should be equal to returned publisher");
+        CardProgram newCardProgram = cardProgramMgr.create(
+                "2_812_" + System.currentTimeMillis(),
+                "2_812_CPname" + System.currentTimeMillis(),
+                "USD",
+                newPublisher.getExternalId(), List.of("123456", "654321")
+        );
+        CardAccount newCardAccount = cardAccountMgr.create(
+                newCardProgram.getExternalIid(),
+                "2_812_" + System.currentTimeMillis(),
+                CardAccountStatus.ENROLLED,
+                newPublisher.getExternalId()
+        );
+        System.out.println("newCardAccount:\n" + newCardAccount);
+        // card program external id was specified during creation but doesn't come back in the response
+        // creation fails if a status is not specified
 
-        publisher.getAddress().setLine1(publisher.getAddress().getLine1() + "_Updated");
-        publisher.setAssumedName(publisher.getAssumedName() + "_Updated");
-        Publisher updatedPublisher = publisherMgr.updateWith(publisher);
-        AssertionsKt.assertNotEquals(publisher, updatedPublisher,
+        AssertionsKt.assertTrue(cardAccountMgr.list().stream()
+                .map(CardAccountReference::getId)
+                .anyMatch(v -> v.equals(newCardAccount.getId())), "created card account should be in list");
+        CardAccount cardAccount = cardAccountMgr.byId(newCardAccount.getId());
+        AssertionsKt.assertEquals(cardAccount, newCardAccount,
+                "new card account should be equal to returned card program");
+
+        cardAccount.setStatus(CardAccountStatus.CLOSED);
+        CardAccount updatedCardAccount = cardAccountMgr.updateWith(cardAccount);
+        AssertionsKt.assertNotEquals(cardAccount, updatedCardAccount,
                 "updated card account should not be equal to card account");
     }
+
 }

@@ -2,6 +2,7 @@ package io.github.coronado.tripleapi.components.schemas
 
 import com.squareup.moshi.Json
 import io.github.coronado.api.Address
+import io.github.coronado.api.CardAccountStatus
 import io.github.coronado.api.Latitude
 import io.github.coronado.api.Longitude
 import java.math.BigDecimal
@@ -36,11 +37,6 @@ data class CardAccount(
     val createdAt: CreatedAt,
     val updatedAt: UpdatedAt
 )
-enum class CardAccountStatus {
-    ENROLLED, // The account is enrolled for rewards
-    NOT_ENROLLED, // The account is not enrolled for rewards
-    CLOSED // The account is closed and cannot receive rewards
-}
 
 // Must provide either a `card_account_id` or an `external_card_account_id`, optionally with a `publisher_external_id`
 // and `card_program_id` specified if the `external_card_account_id` does not uniquely resolve.

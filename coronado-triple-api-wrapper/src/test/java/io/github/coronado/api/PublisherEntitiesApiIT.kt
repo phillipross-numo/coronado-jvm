@@ -64,7 +64,7 @@ class PublisherEntitiesApiIT {
         val listPublishersResp = partnerPublishersClient.httpClient.send(listPublishersReq, HttpResponse.BodyHandlers.ofString())
         val listPublishersRespBody = listPublisherResponseJsonAdapter.fromJson(listPublishersResp.body())
         println("listPublishersRespBody: $listPublishersRespBody")
-        listPublishersRespBody?.publishers?.forEach {
+        listPublishersRespBody?.publishers?.take(10)?.forEach {
             println("publisher $it")
             val getPublisherReqUrl = "${partnerPublishersClient.apiUrl}partner/publishers/${it.id}"
             val getPublisherReq = HttpRequest.newBuilder().uri(URI(getPublisherReqUrl))

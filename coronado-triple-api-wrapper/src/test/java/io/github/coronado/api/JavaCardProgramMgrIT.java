@@ -56,8 +56,7 @@ public class JavaCardProgramMgrIT {
                 newPublisher.getExternalId(), List.of("123456", "654321")
         );
         System.out.println("new card program:\n" + newCardProgram);
-        AssertionsKt.assertTrue(cardProgramMgr.list()
-                .stream()
+        AssertionsKt.assertTrue(cardProgramMgr.list().stream()
                 .map(CardProgramReference::getId)
                 .anyMatch(v -> v.equals(newCardProgram.getId())), "created card program should be in list");
         CardProgram cardProgram = cardProgramMgr.byId(newCardProgram.getId());
@@ -67,7 +66,8 @@ public class JavaCardProgramMgrIT {
         cardProgram.setProgramCurrency("MXN"); // updated to program currency seem not to work?
         cardProgram.setCardBINs(Set.of("112233", "665544"));
         CardProgram updatedCardProgram = cardProgramMgr.updateWith(cardProgram);
-        System.out.println("updated card program:\n" + updatedCardProgram);
+        AssertionsKt.assertNotEquals(cardProgram, updatedCardProgram,
+                "updated card program should not be equal to card account");
     }
 
 }
