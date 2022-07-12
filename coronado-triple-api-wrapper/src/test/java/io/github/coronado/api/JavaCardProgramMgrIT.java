@@ -5,13 +5,15 @@ import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 
-public class JavaPublisherMgrIT {
+public class JavaCardProgramMgrIT {
 
     @Test
-    void testPublishersBasicCRUD() {
+    void testCardProgramBasicCRUD() {
         String cfgNameTripleApiServiceDomain = "TRIPLE_API_SERVICE_DOMAIN";
         String cfgNameTripleApiClientId = "TRIPLE_API_CLIENT_ID";
         String cfgNameTripleApiClientSecret = "TRIPLE_API_CLIENT_SECRET";
@@ -26,9 +28,10 @@ public class JavaPublisherMgrIT {
                 .scope(Client.OAuth2Scope.PARTNER_PUBLISHERS)
                 .build();
         PublisherMgr publisherMgr = new PublisherMgr(partnerPublishersClient);
+        CardProgramMgr cardProgramMgr = new CardProgramMgr(partnerPublishersClient);
 
         Publisher newPublisher = publisherMgr.create(
-                "0_812_" + System.currentTimeMillis(),
+                "0_812_" + System.currentTimeMillis(), // (OU812 didn't work :( )
                 "BenevolentFI, Ltd_" + System.currentTimeMillis(),
                 new Address(
                         "123 Sesame Street, 2nd Floor, New York, NY 10003, US",
@@ -43,16 +46,28 @@ public class JavaPublisherMgrIT {
                 ),
                 new BigDecimal("0.21")
         );
-        AssertionsKt.assertTrue(publisherMgr.list()
-                .stream()
-                .map(PublisherReference::getId)
-                .anyMatch(v -> v.equals(newPublisher.getId())), "created publisher should be in list");
-        Publisher publisher = publisherMgr.byId(newPublisher.getId());
-        AssertionsKt.assertEquals(publisher, newPublisher, "new publisher should be equal to returned publisher");
+        //CardProgram newCardProgram1 = cardProgramMgr.create("1_812_" + System.currentTimeMillis(), "1_812_CPname" + System.currentTimeMillis(), "USD");
+        //System.out.println("new card program:\n" + newCardProgram1);
 
-        publisher.getAddress().setLine1(publisher.getAddress().getLine1() + "_Updated");
-        publisher.setAssumedName(publisher.getAssumedName() + "_Updated");
-        publisher = publisherMgr.updateWith(publisher);
-        System.out.println("updated publisher:\n" + publisher);
+        CardProgram newCardProgram = cardProgramMgr.create(
+                "2_812_" + System.currentTimeMillis(),
+                "2_812_CPname" + System.currentTimeMillis(),
+                "USD",
+                newPublisher.getExternalId(), List.of("123456", "654321")
+        );
+        System.out.println("new card program:\n" + newCardProgram);
+        AssertionsKt.assertTrue(cardProgramMgr.list()
+                .stream()
+                .map(CardProgramReference::getId)
+                .anyMatch(v -> v.equals(newCardProgram.getId())), "created card program should be in list");
+        CardProgram cardProgram = cardProgramMgr.byId(newCardProgram.getId());
+        AssertionsKt.assertEquals(cardProgram, newCardProgram,
+                "new card program should be equal to returned card program");
+
+        cardProgram.setProgramCurrency("MXN"); // updated to program currency seem not to work?
+        cardProgram.setCardBINs(Set.of("112233", "665544"));
+        CardProgram updatedCardProgram = cardProgramMgr.updateWith(cardProgram);
+        System.out.println("updated card program:\n" + updatedCardProgram);
     }
+
 }

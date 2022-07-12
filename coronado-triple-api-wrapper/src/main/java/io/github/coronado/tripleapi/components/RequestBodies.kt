@@ -27,7 +27,15 @@ import java.time.LocalTime
 class CardAccountPatchRequestBody
 class CardAccountPostRequestBody
 class CardProgramPatchRequestBody
-class CardProgramPostRequestBody
+
+data class CardProgramPostRequestBody(
+    @Json(name = "external_id") val externalId: ExternalId,
+    @Json(name = "name") val name: String,
+    @Json(name = "program_currency") val programCurrency: String,
+    @Json(name = "publisher_external_id") val publisherExternalId: ExternalId?,
+    @Json(name = "card_bins") val cardBins: List<String>?
+)
+
 class MerchantPatchRequestBody
 class MerchantPostRequestBody
 class MerchantLocationPatchRequestBody

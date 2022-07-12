@@ -94,6 +94,7 @@
                         <configuration>
                             <excludes>
                                 <exclude>io.github.coronado.api.ClientIT</exclude>
+                                <exclude>io.github.coronado.api.JavaCardProgramMgrIT</exclude>
                                 <exclude>io.github.coronado.api.JavaPublisherMgrIT</exclude>
                                 <exclude>io.github.coronado.api.PublisherEntitiesIT</exclude>
                             </excludes>
@@ -158,6 +159,7 @@
                                 <configuration>
                                     <includes>
                                         <include>io.github.coronado.api.ClientIT</include>
+                                        <include>io.github.coronado.api.JavaCardProgramMgrIT</include>
                                         <include>io.github.coronado.api.JavaPublisherMgrIT</include>
                                         <include>io.github.coronado.api.PublisherEntitiesIT</include>
                                     </includes>
