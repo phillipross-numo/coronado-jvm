@@ -3,23 +3,28 @@ package io.github.coronado.tripleapi.components
 import com.squareup.moshi.Json
 import io.github.coronado.api.Address
 import io.github.coronado.api.CardAccountStatus
+import io.github.coronado.api.MarketingFeeType
+import io.github.coronado.api.MerchantCategoryCode
+import io.github.coronado.api.OfferCategory
 import io.github.coronado.tripleapi.components.schemas.CardAccountIdentifier
 import io.github.coronado.tripleapi.components.schemas.CardBIN
 import io.github.coronado.tripleapi.components.schemas.CurrencyCode
 import io.github.coronado.tripleapi.components.schemas.EntityId
 import io.github.coronado.tripleapi.components.schemas.ExternalId
 import io.github.coronado.tripleapi.components.schemas.GeoTarget
-import io.github.coronado.tripleapi.components.schemas.MerchantCategoryCode
 import io.github.coronado.tripleapi.components.schemas.OfferDisplayRuleAction
 import io.github.coronado.tripleapi.components.schemas.OfferDisplayRuleScopeLevel
 import io.github.coronado.tripleapi.components.schemas.OfferDisplayRuleType
+import io.github.coronado.tripleapi.components.schemas.OfferRewardType
 import io.github.coronado.tripleapi.components.schemas.OfferSearchFilter
+import io.github.coronado.tripleapi.components.schemas.OfferType
 import io.github.coronado.tripleapi.components.schemas.ProcessorMID
 import io.github.coronado.tripleapi.components.schemas.ProcessorMIDType
 import io.github.coronado.tripleapi.components.schemas.TransactionType
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalTime
+import java.util.Currency
 
 /**
  * A Kotlin implementation for the request body components established by Triple API Swagger v1.1 (as of 2022-06-27)
@@ -47,7 +52,7 @@ class MerchantPostRequestBody
 class MerchantLocationPatchRequestBody
 class MerchantLocationPostRequestBody
 class OfferPatchRequestBody
-class OfferPostRequestBody
+
 class OfferActivationPostRequestBody
 class OfferDisplayRulePatchRequestBody
 

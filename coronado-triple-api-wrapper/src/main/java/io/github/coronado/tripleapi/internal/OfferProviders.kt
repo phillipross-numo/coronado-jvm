@@ -1,7 +1,7 @@
 package io.github.coronado.tripleapi.internal
 
 import io.github.coronado.api.Address
-import io.github.coronado.tripleapi.internal.entity.MarketingFeeType
+import io.github.coronado.api.MarketingFeeType
 import io.github.coronado.tripleapi.internal.entity.MerchantCategoryCode
 import io.github.coronado.tripleapi.internal.entity.OfferCategory
 import io.github.coronado.tripleapi.internal.entity.OfferType

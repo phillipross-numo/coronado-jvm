@@ -5,6 +5,8 @@ import io.github.coronado.api.Address
 import io.github.coronado.api.CardAccountStatus
 import io.github.coronado.api.Latitude
 import io.github.coronado.api.Longitude
+import io.github.coronado.api.MerchantCategoryCode
+import io.github.coronado.api.OfferCategory
 import java.math.BigDecimal
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -92,11 +94,6 @@ typealias ExternalId = String
 
 // Cardholder location information used for OfferDisplay
 abstract class GeoTarget() { abstract val radius: Radius? }
-
-data class MerchantCategoryCode(
-    val code: String, // The 4-digit Merchant Category Code, ex: "7998"
-    val description: String // The description of the Merchant Category Code, ex: "Aquariums, Dolphinariums, Seaquariums, and Zoos"
-)
 
 // The complete address, latitude and longitude of a Merchant Location
 data class OfferLocationGeo(val completeAddress: String, val latitude: Latitude, val longitude: Longitude)
@@ -198,10 +195,6 @@ data class Offer(
     val excludedDates: List<String>? // Dates for which the offer is not valid. Transactions made on these dates will not qualify for a reward.
 )
 enum class OfferMode { ONLINE, IN_PERSON, IN_PERSON_AND_ONLINE }
-enum class OfferCategory {
-    AUTOMOTIVE, CHILDREN_AND_FAMILY, ELECTRONICS, ENTERTAINMENT, FINANCIAL_SERVICES, FOOD, HEALTH_AND_BEAUTY, HOME,
-    OFFICE_AND_BUSINESS, RETAIL, TRAVEL, UTILITIES_AND_TELECOM
-}
 enum class OfferMarketingFeeType { FIXED, PERCENTAGE }
 enum class OfferType { CARD_LINKED, AFFILIATE, CATEGORICAL }
 enum class OfferRewardType { FIXED, PERCENTAGE }
