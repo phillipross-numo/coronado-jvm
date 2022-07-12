@@ -126,7 +126,7 @@ data class LatitudeLongitudeGeoTarget(
 // Consumers who make purchases at Merchants with valid Offers may receive Rewards.
 data class Merchant(
     val id: EntityId,
-    val eternalId: ExternalId?,
+    val externalId: ExternalId?,
     val assumedName: String, // The (doing-business-as) name of the Merchant
     val address: Address,
     val merchantCategoryCode: MerchantCategoryCode,

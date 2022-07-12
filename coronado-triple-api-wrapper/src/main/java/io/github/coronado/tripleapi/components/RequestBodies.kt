@@ -43,7 +43,13 @@ data class CardProgramPostRequestBody(
 )
 
 class MerchantPatchRequestBody
-class MerchantPostRequestBody
+class MerchantPostRequestBody(
+    @Json(name = "external_id") val externalId: ExternalId,
+    @Json(name = "assumed_name") val assumedName: String,
+    val address: Address,
+    @Json(name = "merchant_category_code") val merchantCategoryCode: String,
+    val logo: String
+)
 class MerchantLocationPatchRequestBody
 class MerchantLocationPostRequestBody
 class OfferPatchRequestBody
